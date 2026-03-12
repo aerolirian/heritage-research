@@ -1,71 +1,126 @@
 """
 TikTok/BookTok scanner — which PD editions are getting organic traction,
 what angles and aesthetics are performing, comment sentiment.
-Uses Playwright (JS-rendered). Scrapes public pages only, no login required.
+
+Uses TikTokApi (github.com/davidteather/TikTok-Api) — unofficial but actively
+maintained, handles TikTok's anti-bot measures with Playwright under the hood.
+Much more reliable than raw Playwright scraping.
+
+TikTok Research API exists but is academic institutions only — not available
+to individual developers.
 """
-from playwright.sync_api import sync_playwright
-import re
+import asyncio
+from TikTokApi import TikTokApi
 
-BOOKTOK_SEARCHES = [
-    "booktok classics",
-    "annotated classics booktok",
-    "philosophical novel booktok",
-    "thomas mann booktok",
-    "kafka booktok",
-    "joyce ulysses booktok",
-    "dostoevsky booktok",
-    "public domain books tiktok",
-    "classic literature tiktok 2025",
+BOOKTOK_HASHTAGS = [
+    "booktok",
+    "classicbooks",
+    "bookstagram",
+    "literaryfiction",
+    "philosophybooks",
+    "annotatedbooks",
+    "classiclit",
+    "canonbooks",
 ]
 
-AUTHOR_KEYWORDS = [
-    "mann", "kafka", "joyce", "dostoevsky", "tolstoy", "hamsun",
-    "hemingway", "fitzgerald", "woolf", "lewis", "conrad", "flaubert",
-    "chekhov", "zola", "hardy", "dickens", "hugo",
+AUTHOR_SEARCHES = [
+    "thomas mann",
+    "franz kafka",
+    "james joyce",
+    "dostoevsky",
+    "virginia woolf",
+    "knut hamsun",
+    "tolstoy",
+    "hemingway fitzgerald",
 ]
 
+AUTHOR_KEYWORDS = {
+    "mann": "Thomas Mann", "kafka": "Franz Kafka", "joyce": "James Joyce",
+    "dostoevsky": "Fyodor Dostoevsky", "tolstoy": "Leo Tolstoy",
+    "hamsun": "Knut Hamsun", "hemingway": "Ernest Hemingway",
+    "fitzgerald": "F. Scott Fitzgerald", "woolf": "Virginia Woolf",
+    "lewis": "Sinclair Lewis", "flaubert": "Gustave Flaubert",
+    "chekhov": "Anton Chekhov", "nietzsche": "Friedrich Nietzsche",
+    "camus": "Albert Camus",
+}
 
-def scan(config):
+VIDEO_COUNT = 30  # per hashtag/search
+
+
+async def _scan_async(ms_token=None):
     candidates = []
 
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        ctx = browser.new_context(
-            user_agent="Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15",
-            viewport={"width": 390, "height": 844},
-        )
-        page = ctx.new_page()
+    async with TikTokApi() as api:
+        if ms_token:
+            await api.create_sessions(ms_tokens=[ms_token], num_sessions=1,
+                                      sleep_after=3, headless=True)
+        else:
+            await api.create_sessions(num_sessions=1, sleep_after=3, headless=True)
 
-        for query in BOOKTOK_SEARCHES:
+        # Scan BookTok hashtags
+        for hashtag in BOOKTOK_HASHTAGS:
             try:
-                encoded = query.replace(" ", "%20")
-                page.goto(f"https://www.tiktok.com/search?q={encoded}", timeout=20000)
-                page.wait_for_timeout(3000)
+                tag = api.hashtag(name=hashtag)
+                async for video in tag.videos(count=VIDEO_COUNT):
+                    text = (video.as_dict.get("desc", "") or "").lower()
+                    stats = video.as_dict.get("stats", {})
+                    plays = stats.get("playCount", 0)
+                    likes = stats.get("diggCount", 0)
 
-                # Extract video titles/descriptions visible on search results
-                texts = page.evaluate("""
-                    () => Array.from(document.querySelectorAll('[data-e2e="search-card-desc"], .tiktok-j2DY66-DivWrapper, span[class*="desc"]'))
-                         .map(el => el.innerText).filter(t => t.length > 10)
-                """)
-
-                for text in texts:
-                    text_lower = text.lower()
-                    for author in AUTHOR_KEYWORDS:
-                        if author in text_lower:
+                    for kw, full_name in AUTHOR_KEYWORDS.items():
+                        if kw in text:
                             candidates.append({
                                 "source": "tiktok",
-                                "author": author.title(),
+                                "author": full_name,
                                 "title": "",
-                                "tiktok_query": query,
-                                "tiktok_text": text[:200],
-                                "why_now": f"BookTok discussion: '{text[:80].strip()}'",
-                                "raw_score": 40,
+                                "tiktok_hashtag": hashtag,
+                                "tiktok_desc": text[:200],
+                                "tiktok_plays": plays,
+                                "tiktok_likes": likes,
+                                "why_now": f"BookTok #{hashtag}: {plays:,} plays, {likes:,} likes — '{text[:60]}'",
+                                "raw_score": min(80, 20 + (plays / 100000) + (likes / 10000)),
                             })
                             break
             except Exception as e:
-                print(f"  [tiktok/{query[:30]}] {e}")
+                print(f"  [tiktok/#{hashtag}] {e}")
 
-        ctx.close()
-        browser.close()
+        # Search for specific authors
+        for query in AUTHOR_SEARCHES:
+            try:
+                async for video in api.search.videos(query, count=20):
+                    text = (video.as_dict.get("desc", "") or "").lower()
+                    stats = video.as_dict.get("stats", {})
+                    plays = stats.get("playCount", 0)
+                    likes = stats.get("diggCount", 0)
+
+                    author_match = next(
+                        (full for kw, full in AUTHOR_KEYWORDS.items() if kw in query.lower() or kw in text),
+                        ""
+                    )
+                    if author_match:
+                        candidates.append({
+                            "source": "tiktok",
+                            "author": author_match,
+                            "title": "",
+                            "tiktok_search": query,
+                            "tiktok_desc": text[:200],
+                            "tiktok_plays": plays,
+                            "tiktok_likes": likes,
+                            "why_now": f"TikTok search '{query}': {plays:,} plays — '{text[:60]}'",
+                            "raw_score": min(80, 20 + (plays / 100000) + (likes / 10000)),
+                        })
+            except Exception as e:
+                print(f"  [tiktok/search/{query}] {e}")
 
     return candidates
+
+
+def scan(config):
+    # Optional: TikTok ms_token from browser cookies improves reliability
+    # Get it by: open TikTok in browser → DevTools → Application → Cookies → ms_token
+    ms_token = config.get("tiktok_ms_token", None)
+    try:
+        return asyncio.run(_scan_async(ms_token))
+    except Exception as e:
+        print(f"  [tiktok] {e}")
+        return []
