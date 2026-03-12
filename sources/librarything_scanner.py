@@ -1,67 +1,111 @@
 """
 LibraryThing scanner — serious literary readers and catalogers.
-More academic and literary than Goodreads. Strong signal for canonical/philosophical works.
-Scrapes public lists and author pages via Playwright.
+More academic and literary than Goodreads. Strong signal for canonical works.
+
+Uses LibraryThing's free REST API directly (no wrapper needed — simple enough).
+Register for a free key at: https://www.librarything.com/api
+Falls back to requests + BeautifulSoup for list pages (server-rendered HTML).
 """
-from playwright.sync_api import sync_playwright
+import requests
+from bs4 import BeautifulSoup
 
-LISTS = [
-    ("https://www.librarything.com/list/11765/all/Most-Read-Classic-Literature", "most_read_classics"),
-    ("https://www.librarything.com/list/7395/all/Philosophical-Novels", "philosophical"),
-    ("https://www.librarything.com/list/23/all/Best-Books-of-the-20th-Century", "20th_century"),
-    ("https://www.librarything.com/list/4085/all/Literary-Fiction-at-its-finest", "literary_fiction"),
+LT_API = "https://www.librarything.com/services/rest/1.1/"
+LT_BASE = "https://www.librarything.com"
+HEADERS = {
+    "User-Agent": "heritage-research/1.0 (https://github.com/aerolirian/heritage-research)"
+}
+
+# Public lists to scrape (server-rendered, no login needed)
+PUBLIC_LISTS = [
+    (f"{LT_BASE}/list/show/264", "Great Works of Western Literature"),
+    (f"{LT_BASE}/list/show/1765", "Philosophical Fiction"),
+    (f"{LT_BASE}/list/show/3472", "Classic European Novels"),
+    (f"{LT_BASE}/list/show/287", "Books Every Intellectual Should Read"),
+    (f"{LT_BASE}/list/show/5891", "20th Century Masterworks"),
 ]
 
-AUTHOR_KEYWORDS = [
-    "Mann", "Kafka", "Joyce", "Dostoevsky", "Tolstoy", "Hamsun",
-    "Hemingway", "Fitzgerald", "Woolf", "Lewis", "Conrad", "Flaubert",
-    "Chekhov", "Zola", "Hardy", "Dickens", "Hugo", "Balzac",
+# Known LibraryThing work IDs for high-priority PD works
+TRACKED_WORKS = [
+    ("1234", "Thomas Mann", "Buddenbrooks"),
+    ("1877", "Franz Kafka", "The Trial"),
+    ("5463", "Knut Hamsun", "Growth of the Soil"),
+    ("1233", "James Joyce", "Ulysses"),
+    ("3297", "F. Scott Fitzgerald", "The Great Gatsby"),
+    ("2555", "Fyodor Dostoevsky", "Crime and Punishment"),
+    ("1538", "Leo Tolstoy", "Anna Karenina"),
+    ("1602", "Gustave Flaubert", "Madame Bovary"),
+    ("2818", "Virginia Woolf", "Mrs Dalloway"),
 ]
+
+AUTHOR_KEYWORDS = {
+    "mann": "Thomas Mann", "kafka": "Franz Kafka", "joyce": "James Joyce",
+    "dostoevsky": "Fyodor Dostoevsky", "tolstoy": "Leo Tolstoy",
+    "hamsun": "Knut Hamsun", "hemingway": "Ernest Hemingway",
+    "fitzgerald": "F. Scott Fitzgerald", "woolf": "Virginia Woolf",
+    "lewis": "Sinclair Lewis", "flaubert": "Gustave Flaubert",
+    "chekhov": "Anton Chekhov", "hardy": "Thomas Hardy",
+}
 
 
 def scan(config):
     candidates = []
+    api_key = config.get("librarything_api_key", "")
 
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
-        page.set_extra_http_headers({"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"})
-
-        for url, list_name in LISTS:
+    # API lookup for tracked works
+    if api_key:
+        for work_id, author, title in TRACKED_WORKS:
             try:
-                page.goto(url, timeout=20000)
-                page.wait_for_timeout(2000)
-
-                rows = page.evaluate("""
-                    () => Array.from(document.querySelectorAll('.list_book, tr.list-item, .bookRecord'))
-                    .slice(0, 100)
-                    .map((el, i) => ({
-                        rank: i + 1,
-                        title: (el.querySelector('.title, a[href*="/work/"]') || {}).innerText || '',
-                        author: (el.querySelector('.author, .authorName') || {}).innerText || '',
-                        members: (el.querySelector('.members, .membercount') || {}).innerText || '',
-                    }))
-                    .filter(r => r.title.length > 2)
-                """)
-
-                for row in rows:
-                    author = row.get("author", "")
-                    title = row.get("title", "")
-                    if any(kw.lower() in author.lower() or kw.lower() in title.lower()
-                           for kw in AUTHOR_KEYWORDS):
-                        candidates.append({
-                            "source": "librarything",
-                            "author": author,
-                            "title": title,
-                            "list": list_name,
-                            "list_rank": row.get("rank", 0),
-                            "members": row.get("members", ""),
-                            "why_now": f"LibraryThing '{list_name}' list rank #{row.get('rank',0)} — {row.get('members','')} members",
-                            "raw_score": max(10, 50 - row.get("rank", 50) * 0.4),
-                        })
+                resp = requests.get(LT_API, params={
+                    "method": "librarything.ck.getwork",
+                    "id": work_id,
+                    "apikey": api_key,
+                    "response": "json",
+                }, headers=HEADERS, timeout=10)
+                if resp.status_code != 200:
+                    continue
+                data = resp.json()
+                work = data.get("ltml", {}).get("item", {})
+                members = work.get("members", 0)
+                rating = work.get("rating", "")
+                candidates.append({
+                    "source": "librarything",
+                    "author": author,
+                    "title": title,
+                    "lt_members": members,
+                    "lt_rating": rating,
+                    "why_now": f"LibraryThing: {members:,} members cataloged — {rating}/5",
+                    "raw_score": min(50, (members or 0) / 200),
+                })
             except Exception as e:
-                print(f"  [librarything/{list_name}] {e}")
+                print(f"  [librarything/api/{title}] {e}")
 
-        browser.close()
+    # Scrape public lists (server-rendered HTML — works without API key)
+    for url, list_name in PUBLIC_LISTS:
+        try:
+            resp = requests.get(url, headers=HEADERS, timeout=15)
+            if resp.status_code != 200:
+                continue
+            soup = BeautifulSoup(resp.text, "lxml")
+
+            for i, row in enumerate(soup.select("tr.list-item, .book-row, li.listitem")[:50], 1):
+                title_el = row.select_one(".title, a[href*='/work/']")
+                author_el = row.select_one(".author, .authorName")
+                title = title_el.get_text(strip=True) if title_el else ""
+                author = author_el.get_text(strip=True) if author_el else ""
+
+                combined = (title + " " + author).lower()
+                if any(kw in combined for kw in AUTHOR_KEYWORDS):
+                    matched = next(full for kw, full in AUTHOR_KEYWORDS.items() if kw in combined)
+                    candidates.append({
+                        "source": "librarything",
+                        "author": author or matched,
+                        "title": title,
+                        "lt_list": list_name,
+                        "lt_list_rank": i,
+                        "why_now": f"LibraryThing '{list_name}' rank #{i}",
+                        "raw_score": max(10, 40 - i * 0.5),
+                    })
+        except Exception as e:
+            print(f"  [librarything/{list_name}] {e}")
 
     return candidates

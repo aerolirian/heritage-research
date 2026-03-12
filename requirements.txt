@@ -1,3 +1,4 @@
+# Core
 praw>=7.7.0
 pytrends>=4.9.0
 requests>=2.31.0
@@ -5,3 +6,10 @@ beautifulsoup4>=4.12.0
 lxml>=4.9.0
 playwright>=1.40.0
 openai>=1.0.0
+
+# Platform-specific libraries
+TikTokApi>=7.3.0          # TikTok/BookTok (github.com/davidteather/TikTok-Api)
+instaloader>=4.13.0       # Instagram (github.com/instaloader/instaloader)
+twscrape>=0.17.0          # Twitter/X (github.com/vladkens/twscrape)
+letterboxdpy>=6.0.0       # Letterboxd (github.com/nmcassa/letterboxdpy)
+storygraph-api>=0.2.0     # The StoryGraph (github.com/ym496/storygraph-api)

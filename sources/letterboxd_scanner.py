@@ -1,80 +1,71 @@
 """
 Letterboxd scanner — film community's literary adaptation signal.
 Letterboxd users are literary-minded film watchers — exact Heritage Canon overlap.
-Signals: adaptation lists, which literary films are trending, book→film discussions.
+
+Uses letterboxdpy (github.com/nmcassa/letterboxdpy) — 140 stars, last commit
+~Mar 2026, actively maintained. Scrapes public Letterboxd data cleanly.
+No API key needed.
 """
-from playwright.sync_api import sync_playwright
+from letterboxdpy import movie, search
 
-LISTS_TO_SCAN = [
-    ("https://letterboxd.com/films/based-on-book/", "based_on_book"),
-    ("https://letterboxd.com/films/based-on-novel/", "based_on_novel"),
-]
-
-SEARCH_TERMS = [
-    "thomas mann",
-    "kafka",
-    "james joyce",
-    "dostoevsky",
-    "tolstoy",
-    "knut hamsun",
-    "virginia woolf",
-    "fitzgerald",
-]
-
-AUTHOR_KEYWORDS = [
-    ("Mann", "Thomas Mann"), ("Kafka", "Franz Kafka"), ("Joyce", "James Joyce"),
-    ("Dostoevsky", "Fyodor Dostoevsky"), ("Tolstoy", "Leo Tolstoy"),
-    ("Hamsun", "Knut Hamsun"), ("Woolf", "Virginia Woolf"),
-    ("Fitzgerald", "F. Scott Fitzgerald"), ("Conrad", "Joseph Conrad"),
+ADAPTATION_SEARCHES = [
+    ("Wuthering Heights", "Emily Brontë"),
+    ("Crime and Punishment", "Fyodor Dostoevsky"),
+    ("Anna Karenina", "Leo Tolstoy"),
+    ("Madame Bovary", "Gustave Flaubert"),
+    ("The Trial", "Franz Kafka"),
+    ("The Great Gatsby", "F. Scott Fitzgerald"),
+    ("Death in Venice", "Thomas Mann"),
+    ("Mrs Dalloway", "Virginia Woolf"),
+    ("The Picture of Dorian Gray", "Oscar Wilde"),
+    ("Dracula", "Bram Stoker"),
+    ("Frankenstein", "Mary Shelley"),
+    ("The Count of Monte Cristo", "Alexandre Dumas"),
+    ("Les Misérables", "Victor Hugo"),
+    ("Heart of Darkness", "Joseph Conrad"),
+    ("The Metamorphosis", "Franz Kafka"),
+    ("The Sun Also Rises", "Ernest Hemingway"),
+    ("A Farewell to Arms", "Ernest Hemingway"),
+    ("The Sound and the Fury", "William Faulkner"),
+    ("The Odyssey", "Homer"),
+    ("Buddenbrooks", "Thomas Mann"),
 ]
 
 
 def scan(config):
     candidates = []
 
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
-        page.set_extra_http_headers({
-            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
-        })
+    for title, author in ADAPTATION_SEARCHES:
+        try:
+            results = search.search_films(title)
+            if not results:
+                continue
 
-        # Search Letterboxd for each author
-        for term in SEARCH_TERMS:
-            try:
-                encoded = term.replace(" ", "+")
-                page.goto(f"https://letterboxd.com/search/films/{encoded}/", timeout=20000)
-                page.wait_for_timeout(2000)
+            # Take first result (most relevant)
+            film_slug = results[0].get("slug", "")
+            if not film_slug:
+                continue
 
-                films = page.evaluate("""
-                    () => Array.from(document.querySelectorAll('.film-detail'))
-                    .slice(0, 10)
-                    .map(el => ({
-                        title: (el.querySelector('.film-title-wrapper a') || {}).innerText || '',
-                        year: (el.querySelector('.film-title-wrapper small') || {}).innerText || '',
-                        rating: (el.querySelector('.average-rating') || {}).innerText || '',
-                    }))
-                    .filter(f => f.title)
-                """)
+            film = movie.Movie(film_slug)
+            rating = getattr(film, "rating", None)
+            watchers = getattr(film, "watchers", None)
+            fans = getattr(film, "fans", None)
+            year = getattr(film, "year", "")
 
-                for film in films:
-                    author_match = next(
-                        (full for kw, full in AUTHOR_KEYWORDS if kw.lower() in term.lower()),
-                        term.title()
-                    )
-                    candidates.append({
-                        "source": "letterboxd",
-                        "author": author_match,
-                        "title": "",
-                        "adaptation_title": film.get("title", ""),
-                        "adaptation_year": film.get("year", ""),
-                        "letterboxd_rating": film.get("rating", ""),
-                        "why_now": f"Letterboxd: adaptation '{film.get('title','')}' ({film.get('year','')}) rated {film.get('rating','')}",
-                        "raw_score": 35,
-                    })
-            except Exception as e:
-                print(f"  [letterboxd/{term}] {e}")
-
-        browser.close()
+            candidates.append({
+                "source": "letterboxd",
+                "author": author,
+                "title": title,
+                "adaptation_slug": film_slug,
+                "adaptation_year": str(year) if year else "",
+                "letterboxd_rating": str(rating) if rating else "",
+                "letterboxd_watchers": watchers,
+                "letterboxd_fans": fans,
+                "letterboxd_url": f"https://letterboxd.com/film/{film_slug}/",
+                "why_now": f"Letterboxd: '{title}' — {rating}/5 from {watchers or '?'} watchers, {fans or '?'} fans",
+                "raw_score": 35 + (float(rating) * 3 if rating else 0),
+            })
+        except Exception as e:
+            print(f"  [letterboxd/{title}] {e}")
 
     return candidates

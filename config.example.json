@@ -6,10 +6,16 @@
   "omdb_api_key": "",
   "brave_api_key": "",
   "youtube_api_key": "",
+  "google_books_api_key": "",
   "tiktok_ms_token": "",
   "tumblr_api_key": "",
   "stackexchange_api_key": "",
-  "omdb_api_key": "",
-  "google_books_api_key": "",
+  "librarything_api_key": "",
+  "instagram_username": "",
+  "storygraph_username": "",
+  "storygraph_password": "",
+  "x_accounts": [
+    {"username": "", "password": "", "email": "", "email_password": ""}
+  ],
   "openai_api_key": ""
 }

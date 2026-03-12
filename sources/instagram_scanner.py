@@ -1,9 +1,18 @@
 """
 Instagram scanner — which PD/annotated editions are getting traction,
 what cover aesthetics perform, Heritage Canon aesthetic vs competitors.
-Scrapes public hashtag pages via Playwright. No login required for public tags.
+
+Uses instaloader (github.com/instaloader/instaloader) — 11,900 stars, actively
+maintained. Works anonymously for public hashtag data but is rate-limited.
+For best results: provide a burner account session (not your real account).
+
+Setup for session:
+    instaloader --login=<burner_username>
+    # saves session to ~/.config/instaloader/session-<username>
+    # then set instagram_username in config
 """
-from playwright.sync_api import sync_playwright
+import instaloader
+from datetime import date, timedelta
 
 HASHTAGS = [
     "booktok",
@@ -15,56 +24,72 @@ HASHTAGS = [
     "classiclit",
     "canonbooks",
     "greatliterature",
+    "philosophybooks",
 ]
 
-AUTHOR_KEYWORDS = [
-    "mann", "kafka", "joyce", "dostoevsky", "tolstoy", "hamsun",
-    "hemingway", "fitzgerald", "woolf", "lewis", "flaubert",
-    "chekhov", "dickens", "hugo", "zola",
-]
+AUTHOR_KEYWORDS = {
+    "mann": "Thomas Mann", "kafka": "Franz Kafka", "joyce": "James Joyce",
+    "dostoevsky": "Fyodor Dostoevsky", "tolstoy": "Leo Tolstoy",
+    "hamsun": "Knut Hamsun", "hemingway": "Ernest Hemingway",
+    "fitzgerald": "F. Scott Fitzgerald", "woolf": "Virginia Woolf",
+    "lewis": "Sinclair Lewis", "flaubert": "Gustave Flaubert",
+    "chekhov": "Anton Chekhov", "nietzsche": "Friedrich Nietzsche",
+}
+
+POSTS_PER_TAG = 20
+CUTOFF_DAYS = 90
 
 
 def scan(config):
     candidates = []
+    cutoff = date.today() - timedelta(days=CUTOFF_DAYS)
 
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        ctx = browser.new_context(
-            user_agent="Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15",
-            viewport={"width": 390, "height": 844},
-        )
-        page = ctx.new_page()
+    L = instaloader.Instaloader(
+        download_pictures=False,
+        download_videos=False,
+        download_video_thumbnails=False,
+        download_geotags=False,
+        download_comments=False,
+        save_metadata=False,
+        quiet=True,
+    )
 
-        for tag in HASHTAGS:
-            try:
-                page.goto(f"https://www.instagram.com/explore/tags/{tag}/", timeout=20000)
-                page.wait_for_timeout(3000)
+    # Load session if available (burner account)
+    username = config.get("instagram_username", "")
+    if username:
+        try:
+            L.load_session_from_file(username)
+        except Exception:
+            pass  # fall back to anonymous
 
-                # Extract alt text and captions from public posts
-                texts = page.evaluate("""
-                    () => Array.from(document.querySelectorAll('img[alt], ._aagv img'))
-                         .map(el => el.getAttribute('alt') || '')
-                         .filter(t => t.length > 10)
-                """)
+    for tag in HASHTAGS:
+        count = 0
+        try:
+            hashtag = instaloader.Hashtag.from_name(L.context, tag)
+            for post in hashtag.get_posts():
+                if count >= POSTS_PER_TAG:
+                    break
+                if post.date.date() < cutoff:
+                    break
 
-                for text in texts:
-                    text_lower = text.lower()
-                    for author in AUTHOR_KEYWORDS:
-                        if author in text_lower:
-                            candidates.append({
-                                "source": "instagram",
-                                "author": author.title(),
-                                "title": "",
-                                "hashtag": tag,
-                                "caption": text[:200],
-                                "why_now": f"Instagram #{tag} traction: '{text[:60].strip()}'",
-                                "raw_score": 30,
-                            })
-                            break
-            except Exception as e:
-                print(f"  [instagram/#{tag}] {e}")
-
-        ctx.close()
-        browser.close()
+                caption = (post.caption or "").lower()
+                for kw, full_name in AUTHOR_KEYWORDS.items():
+                    if kw in caption:
+                        candidates.append({
+                            "source": "instagram",
+                            "author": full_name,
+                            "title": "",
+                            "hashtag": tag,
+                            "ig_likes": post.likes,
+                            "ig_comments": post.comments,
+                            "ig_date": str(post.date.date()),
+                            "ig_url": f"https://www.instagram.com/p/{post.shortcode}/",
+                            "why_now": f"Instagram #{tag}: {post.likes:,} likes — '{caption[:60]}'",
+                            "raw_score": min(60, 15 + post.likes / 1000),
+                        })
+                        break
+                count += 1
+        except Exception as e:
+            print(f"  [instagram/#{tag}] {e}")
 
     return candidates

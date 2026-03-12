@@ -1,75 +1,105 @@
 """
-Twitter/X scanner — discourse around specific PD authors, trending philosophical
-topics, viral essay threads. Scrapes public search via Playwright (API costs money).
+Twitter/X scanner — discourse around PD authors, trending philosophical topics,
+viral essay threads.
+
+Uses twscrape (github.com/vladkens/twscrape) — 2,300 stars, actively maintained.
+Uses X's internal GraphQL API (same as the web app). Requires real X accounts
+for authentication — supports account rotation when rate-limited.
+
+Setup:
+    Add x_accounts to config as a list of {username, password, email, email_password}
+    twscrape will manage sessions automatically.
+
+Note: snscrape (the old go-to) has been dead since June 2023. twscrape is the
+current standard for free X scraping.
 """
-from playwright.sync_api import sync_playwright
+import asyncio
+import twscrape
 
 SEARCH_QUERIES = [
-    "Thomas Mann relevance",
-    "Kafka bureaucracy",
+    "Thomas Mann book",
+    "Franz Kafka relevance",
     "Dostoevsky modern",
-    "Hamsun nature",
-    "classic literature annotated edition",
-    "public domain philosophy novel",
+    "Knut Hamsun",
+    "classic literature annotated",
+    "philosophy novel",
+    "public domain philosophical edition",
     "great american novel 2025",
-    "literary philosophy twitter",
+    "literary fiction",
+    "Virginia Woolf stream consciousness",
 ]
 
-AUTHOR_KEYWORDS = [
-    ("Mann", "Thomas Mann"),
-    ("Kafka", "Franz Kafka"),
-    ("Joyce", "James Joyce"),
-    ("Dostoevsky", "Fyodor Dostoevsky"),
-    ("Tolstoy", "Leo Tolstoy"),
-    ("Hamsun", "Knut Hamsun"),
-    ("Hemingway", "Ernest Hemingway"),
-    ("Fitzgerald", "F. Scott Fitzgerald"),
-    ("Woolf", "Virginia Woolf"),
-    ("Conrad", "Joseph Conrad"),
-]
+AUTHOR_KEYWORDS = {
+    "mann": "Thomas Mann", "kafka": "Franz Kafka", "joyce": "James Joyce",
+    "dostoevsky": "Fyodor Dostoevsky", "tolstoy": "Leo Tolstoy",
+    "hamsun": "Knut Hamsun", "hemingway": "Ernest Hemingway",
+    "fitzgerald": "F. Scott Fitzgerald", "woolf": "Virginia Woolf",
+    "lewis": "Sinclair Lewis", "flaubert": "Gustave Flaubert",
+    "nietzsche": "Friedrich Nietzsche", "camus": "Albert Camus",
+}
+
+TWEETS_PER_QUERY = 20
+
+
+async def _scan_async(config):
+    candidates = []
+    accounts = config.get("x_accounts", [])
+
+    api = twscrape.API()
+
+    # Add accounts if configured
+    for acc in accounts:
+        try:
+            await api.pool.add_account(
+                username=acc["username"],
+                password=acc["password"],
+                email=acc["email"],
+                email_password=acc.get("email_password", ""),
+            )
+        except Exception as e:
+            print(f"  [twitter/account] {e}")
+
+    if accounts:
+        try:
+            await api.pool.login_all()
+        except Exception as e:
+            print(f"  [twitter/login] {e}")
+
+    for query in SEARCH_QUERIES:
+        count = 0
+        try:
+            async for tweet in api.search(query, limit=TWEETS_PER_QUERY):
+                text = tweet.rawContent.lower()
+                likes = tweet.likeCount
+                retweets = tweet.retweetCount
+
+                for kw, full_name in AUTHOR_KEYWORDS.items():
+                    if kw in text:
+                        candidates.append({
+                            "source": "twitter",
+                            "author": full_name,
+                            "title": "",
+                            "tweet_text": tweet.rawContent[:280],
+                            "tweet_likes": likes,
+                            "tweet_retweets": retweets,
+                            "tweet_url": f"https://x.com/i/web/status/{tweet.id}",
+                            "search_query": query,
+                            "why_now": f"X/Twitter: {likes:,} likes — '{tweet.rawContent[:70]}'",
+                            "raw_score": min(50, 15 + likes / 500 + retweets / 100),
+                        })
+                        break
+                count += 1
+                if count >= TWEETS_PER_QUERY:
+                    break
+        except Exception as e:
+            print(f"  [twitter/{query[:30]}] {e}")
+
+    return candidates
 
 
 def scan(config):
-    candidates = []
-
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        ctx = browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-        )
-        page = ctx.new_page()
-
-        for query in SEARCH_QUERIES:
-            try:
-                encoded = query.replace(" ", "%20")
-                page.goto(f"https://x.com/search?q={encoded}&f=live", timeout=20000)
-                page.wait_for_timeout(4000)
-
-                tweets = page.evaluate("""
-                    () => Array.from(document.querySelectorAll('[data-testid="tweetText"]'))
-                         .map(el => el.innerText)
-                         .filter(t => t.length > 20)
-                         .slice(0, 20)
-                """)
-
-                for tweet in tweets:
-                    tweet_lower = tweet.lower()
-                    for keyword, full_name in AUTHOR_KEYWORDS:
-                        if keyword.lower() in tweet_lower:
-                            candidates.append({
-                                "source": "twitter",
-                                "author": full_name,
-                                "title": "",
-                                "search_query": query,
-                                "tweet": tweet[:280],
-                                "why_now": f"Twitter discourse: '{tweet[:80].strip()}'",
-                                "raw_score": 30,
-                            })
-                            break
-            except Exception as e:
-                print(f"  [twitter/{query[:30]}] {e}")
-
-        ctx.close()
-        browser.close()
-
-    return candidates
+    try:
+        return asyncio.run(_scan_async(config))
+    except Exception as e:
+        print(f"  [twitter] {e}")
+        return []

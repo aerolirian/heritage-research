@@ -1,67 +1,71 @@
 """
 BookBub scanner — 15M+ readers, editorial picks signal commercial literary demand.
-Featured deals on annotated/philosophical classics = what editors think will sell.
-Also: BookBub lists and author follow counts signal reader investment in specific authors.
+Deal pages are server-rendered HTML — no Playwright needed.
+Uses requests + BeautifulSoup directly against /ebook-deals genre pages.
 """
-from playwright.sync_api import sync_playwright
+import requests
+from bs4 import BeautifulSoup
 
-PAGES = [
-    ("https://www.bookbub.com/books?category=literary+fiction&sort=featured", "literary_featured"),
-    ("https://www.bookbub.com/books?category=classics&sort=featured", "classics_featured"),
-    ("https://www.bookbub.com/books?category=literary+fiction&sort=new_release", "literary_new"),
-    ("https://www.bookbub.com/lists/best-classic-literature", "best_classics_list"),
+BASE = "https://www.bookbub.com"
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36",
+    "Accept-Language": "en-US,en;q=0.9",
+}
+
+GENRE_PAGES = [
+    f"{BASE}/ebook-deals?genre=literary+fiction",
+    f"{BASE}/ebook-deals?genre=classics",
+    f"{BASE}/ebook-deals?genre=historical+fiction",
+    f"{BASE}/ebook-deals?genre=philosophy",
 ]
 
-AUTHOR_KEYWORDS = [
-    "Mann", "Kafka", "Joyce", "Dostoevsky", "Tolstoy", "Hamsun",
-    "Hemingway", "Fitzgerald", "Woolf", "Lewis", "Conrad", "Flaubert",
-    "Chekhov", "Zola", "Hardy", "Dickens", "Hugo",
-]
+AUTHOR_KEYWORDS = {
+    "mann": "Thomas Mann", "kafka": "Franz Kafka", "joyce": "James Joyce",
+    "dostoevsky": "Fyodor Dostoevsky", "tolstoy": "Leo Tolstoy",
+    "hamsun": "Knut Hamsun", "hemingway": "Ernest Hemingway",
+    "fitzgerald": "F. Scott Fitzgerald", "woolf": "Virginia Woolf",
+    "lewis": "Sinclair Lewis", "flaubert": "Gustave Flaubert",
+    "chekhov": "Anton Chekhov", "hardy": "Thomas Hardy",
+    "dickens": "Charles Dickens", "hugo": "Victor Hugo",
+}
 
 
 def scan(config):
     candidates = []
 
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
-        page.set_extra_http_headers({"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"})
+    for url in GENRE_PAGES:
+        try:
+            resp = requests.get(url, headers=HEADERS, timeout=15)
+            if resp.status_code != 200:
+                continue
 
-        for url, section in PAGES:
-            try:
-                page.goto(url, timeout=20000)
-                page.wait_for_timeout(3000)
+            soup = BeautifulSoup(resp.text, "lxml")
 
-                books = page.evaluate("""
-                    () => Array.from(document.querySelectorAll('[class*="book"], article'))
-                    .slice(0, 40)
-                    .map(el => ({
-                        title: (el.querySelector('[class*="title"], h3, h2') || {}).innerText || '',
-                        author: (el.querySelector('[class*="author"]') || {}).innerText || '',
-                        price: (el.querySelector('[class*="price"]') || {}).innerText || '',
-                        rating: (el.querySelector('[class*="rating"], [class*="star"]') || {}).innerText || '',
-                    }))
-                    .filter(b => b.title.length > 3)
-                """)
+            for book in soup.select("[class*='BookCard'], [class*='book-card'], article"):
+                title_el = book.select_one("[class*='title'], h2, h3")
+                author_el = book.select_one("[class*='author']")
+                price_el = book.select_one("[class*='price'], [class*='deal']")
 
-                for book in books:
-                    title = book.get("title", "")
-                    author = book.get("author", "")
-                    if any(kw.lower() in author.lower() or kw.lower() in title.lower()
-                           for kw in AUTHOR_KEYWORDS):
+                title = title_el.get_text(strip=True) if title_el else ""
+                author = author_el.get_text(strip=True) if author_el else ""
+                price = price_el.get_text(strip=True) if price_el else ""
+
+                combined = (title + " " + author).lower()
+                for kw, full_name in AUTHOR_KEYWORDS.items():
+                    if kw in combined:
                         candidates.append({
                             "source": "bookbub",
-                            "author": author,
+                            "author": full_name,
                             "title": title,
-                            "bookbub_section": section,
-                            "bookbub_price": book.get("price", ""),
-                            "bookbub_rating": book.get("rating", ""),
-                            "why_now": f"BookBub {section}: '{title[:60]}' at {book.get('price','')}",
+                            "bookbub_author": author,
+                            "bookbub_price": price,
+                            "bookbub_url": url,
+                            "why_now": f"BookBub deal: '{title}' at {price} — editorial pick for 15M readers",
                             "raw_score": 35,
                         })
-            except Exception as e:
-                print(f"  [bookbub/{section}] {e}")
+                        break
 
-        browser.close()
+        except Exception as e:
+            print(f"  [bookbub/{url}] {e}")
 
     return candidates

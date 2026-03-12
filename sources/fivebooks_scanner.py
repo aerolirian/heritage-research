@@ -1,73 +1,114 @@
 """
 Five Books scanner — expert curated reading lists (academics, writers, thinkers).
 "Best books on existentialism", "Best novels about bureaucracy", etc.
-Signal: what experts recommend = underserved titles with intellectual legitimacy.
-Strong for subtitle angle generation — experts articulate exactly why a book matters.
+Signal: experts articulate exactly why a book matters — best subtitle angle source.
+
+Pages are server-rendered HTML with Schema.org JSON-LD embedded — no Playwright needed.
+Uses requests + BeautifulSoup. Much faster and more reliable than Playwright.
 """
-from playwright.sync_api import sync_playwright
+import json
+import requests
+from bs4 import BeautifulSoup
 
-CATEGORY_URLS = [
-    ("https://fivebooks.com/category/philosophy/", "philosophy"),
-    ("https://fivebooks.com/category/literature/", "literature"),
-    ("https://fivebooks.com/category/history-of-ideas/", "history_of_ideas"),
-    ("https://fivebooks.com/category/20th-century-history/", "20th_century"),
-    ("https://fivebooks.com/best-books/classic-literature/", "classics"),
-    ("https://fivebooks.com/best-books/philosophy-of-mind/", "philosophy_mind"),
+BASE = "https://fivebooks.com"
+HEADERS = {
+    "User-Agent": "heritage-research/1.0 (https://github.com/aerolirian/heritage-research)"
+}
+
+CATEGORY_PAGES = [
+    f"{BASE}/best-books/philosophy/",
+    f"{BASE}/best-books/literary-fiction/",
+    f"{BASE}/best-books/history-of-ideas/",
+    f"{BASE}/best-books/classic-literature/",
+    f"{BASE}/best-books/philosophy-of-mind/",
+    f"{BASE}/best-books/european-history/",
+    f"{BASE}/best-books/20th-century-history/",
+    f"{BASE}/best-books/existentialism/",
+    f"{BASE}/best-books/modernism/",
 ]
 
-AUTHOR_KEYWORDS = [
-    "Mann", "Kafka", "Joyce", "Dostoevsky", "Tolstoy", "Hamsun",
-    "Hemingway", "Fitzgerald", "Woolf", "Lewis", "Conrad", "Flaubert",
-    "Chekhov", "Zola", "Hardy", "Camus", "Sartre", "Nietzsche",
-    "Rilke", "Musil", "Broch", "Svevo", "Schnitzler",
-]
+AUTHOR_KEYWORDS = {
+    "mann": "Thomas Mann", "kafka": "Franz Kafka", "joyce": "James Joyce",
+    "dostoevsky": "Fyodor Dostoevsky", "tolstoy": "Leo Tolstoy",
+    "hamsun": "Knut Hamsun", "hemingway": "Ernest Hemingway",
+    "fitzgerald": "F. Scott Fitzgerald", "woolf": "Virginia Woolf",
+    "lewis": "Sinclair Lewis", "flaubert": "Gustave Flaubert",
+    "chekhov": "Anton Chekhov", "nietzsche": "Friedrich Nietzsche",
+    "camus": "Albert Camus", "rilke": "Rainer Maria Rilke",
+    "musil": "Robert Musil", "broch": "Hermann Broch",
+    "zola": "Emile Zola", "hardy": "Thomas Hardy",
+}
 
 
 def scan(config):
     candidates = []
+    seen = set()
 
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
-        page.set_extra_http_headers({"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"})
+    # Get interview links from each category
+    interview_urls = []
+    for cat_url in CATEGORY_PAGES:
+        try:
+            resp = requests.get(cat_url, headers=HEADERS, timeout=15)
+            if resp.status_code != 200:
+                continue
+            soup = BeautifulSoup(resp.text, "lxml")
+            for a in soup.select("a[href*='/interviews/']"):
+                href = a["href"]
+                if not href.startswith("http"):
+                    href = BASE + href
+                if href not in seen:
+                    seen.add(href)
+                    interview_urls.append(href)
+        except Exception as e:
+            print(f"  [fivebooks/category] {e}")
 
-        for url, category in CATEGORY_URLS:
-            try:
-                page.goto(url, timeout=20000)
-                page.wait_for_timeout(2000)
+    # Scrape each interview for recommended books
+    for url in interview_urls[:60]:
+        try:
+            resp = requests.get(url, headers=HEADERS, timeout=15)
+            if resp.status_code != 200:
+                continue
+            soup = BeautifulSoup(resp.text, "lxml")
 
-                items = page.evaluate("""
-                    () => Array.from(document.querySelectorAll('.interview-item, article, .book-recommendation'))
-                    .slice(0, 30)
-                    .map(el => ({
-                        title: (el.querySelector('h2, h3, .book-title') || {}).innerText || '',
-                        author: (el.querySelector('.author, .book-author') || {}).innerText || '',
-                        expert: (el.querySelector('.interviewer, .recommender') || {}).innerText || '',
-                        url: (el.querySelector('a') || {}).href || '',
-                    }))
-                    .filter(r => r.title.length > 5)
-                """)
+            # Extract JSON-LD schema data if present
+            for script in soup.find_all("script", type="application/ld+json"):
+                try:
+                    data = json.loads(script.string)
+                    items = data if isinstance(data, list) else [data]
+                    for item in items:
+                        if item.get("@type") in ("Book", "ItemList"):
+                            # Extract book recommendations
+                            pass
+                except Exception:
+                    pass
 
-                for item in items:
-                    title = item.get("title", "")
-                    author = item.get("author", "")
-                    expert = item.get("expert", "")
-                    matched = [kw for kw in AUTHOR_KEYWORDS
-                               if kw.lower() in title.lower() or kw.lower() in author.lower()]
-                    if matched:
+            # Extract expert name
+            expert_el = soup.select_one(".interviewer-name, .expert-name, [class*='expert']")
+            expert = expert_el.get_text(strip=True) if expert_el else ""
+
+            # Extract recommended book titles and authors
+            book_els = soup.select(".book-recommendation, .recommended-book, [class*='book-title']")
+            for book_el in book_els:
+                title_el = book_el.select_one("h3, h4, .title")
+                author_el = book_el.select_one(".author, [class*='author']")
+                book_title = title_el.get_text(strip=True) if title_el else ""
+                book_author = author_el.get_text(strip=True) if author_el else ""
+
+                combined = (book_title + " " + book_author).lower()
+                for kw, full_name in AUTHOR_KEYWORDS.items():
+                    if kw in combined:
                         candidates.append({
                             "source": "fivebooks",
-                            "author": author or matched[0],
-                            "title": title,
-                            "fivebooks_category": category,
+                            "author": full_name,
+                            "title": book_title,
                             "fivebooks_expert": expert,
-                            "fivebooks_url": item.get("url", ""),
-                            "why_now": f"Expert-recommended on Five Books ({category}): recommended by {expert or 'expert'}",
+                            "fivebooks_url": url,
+                            "why_now": f"Expert recommended on Five Books: '{book_title}' (by {expert or 'expert'})",
                             "raw_score": 40,
                         })
-            except Exception as e:
-                print(f"  [fivebooks/{category}] {e}")
+                        break
 
-        browser.close()
+        except Exception as e:
+            print(f"  [fivebooks/interview] {e}")
 
     return candidates
