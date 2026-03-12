@@ -3,6 +3,7 @@ __pycache__/
 *.pyo
 .env
 output/
+promotion_output/
 *.json
 !config.example.json
 .DS_Store
