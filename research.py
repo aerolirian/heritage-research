@@ -29,6 +29,9 @@ def cmd_sweep(args, config):
         "goodreads", "wikipedia", "anniversary", "youtube",
         "amazon", "tiktok", "instagram", "twitter",
         "letterboxd", "opensyllabus",
+        "librarything", "storygraph", "substack", "lithub",
+        "marginalian", "fivebooks", "quora", "podcast",
+        "openlibrary", "tumblr", "bookbub", "stackexchange",
     ]
     all_candidates = []
     for source in sources:
@@ -90,6 +93,30 @@ def run_source(source, config):
         from sources.letterboxd_scanner import scan
     elif source == "opensyllabus":
         from sources.opensyllabus_scanner import scan
+    elif source == "librarything":
+        from sources.librarything_scanner import scan
+    elif source == "storygraph":
+        from sources.storygraph_scanner import scan
+    elif source == "substack":
+        from sources.substack_scanner import scan
+    elif source == "lithub":
+        from sources.lithub_scanner import scan
+    elif source == "marginalian":
+        from sources.marginalian_scanner import scan
+    elif source == "fivebooks":
+        from sources.fivebooks_scanner import scan
+    elif source == "quora":
+        from sources.quora_scanner import scan
+    elif source == "podcast":
+        from sources.podcast_scanner import scan
+    elif source == "openlibrary":
+        from sources.openlibrary_scanner import scan
+    elif source == "tumblr":
+        from sources.tumblr_scanner import scan
+    elif source == "bookbub":
+        from sources.bookbub_scanner import scan
+    elif source == "stackexchange":
+        from sources.stackexchange_scanner import scan
     else:
         raise ValueError(f"Unknown source: {source}")
     return scan(config)

@@ -22,6 +22,19 @@ SOURCE_WEIGHTS = {
     "instagram": 25,     # aesthetic/visual traction
     "amazon": 25,        # competitor gap analysis
     "twitter": 25,       # discourse signal
+    # Reader congregation platforms
+    "marginalian": 50,   # Maria Popova essay = HC demographic primed
+    "podcast": 45,       # dedicated episode = 30-60min audience immersion
+    "lithub": 45,        # biggest literary publication — what serious readers see
+    "fivebooks": 40,     # expert recommendation = intellectual legitimacy
+    "librarything": 38,  # serious literary catalogers
+    "substack": 38,      # literary newsletter engagement
+    "openlibrary": 35,   # actual reader demand (borrow/readinglog counts)
+    "storygraph": 35,    # growing GR alternative, younger literary audience
+    "stackexchange": 35, # close reading = deep engagement signal
+    "bookbub": 30,       # commercial demand signal
+    "tumblr": 28,        # younger readers discovering classics
+    "quora": 25,         # intent signal (what readers are searching for)
 }
 
 KNOWN_CATALOG = {

@@ -35,6 +35,18 @@ Target: 10–20 ranked candidates per weekly sweep.
 | Amazon (Playwright) | Competitor editions, BSR gaps | None | 25 |
 | Twitter/X (Playwright) | Discourse, viral essay threads | None | 25 |
 | OMDB | Existing adaptation sentiment | API key | — |
+| The Marginalian (Playwright) | Maria Popova essays — HC demographic primed | None | 50 |
+| Podcast RSS feeds | Episode-length author treatment — deep audience engagement | None | 45 |
+| Literary Hub (Playwright) | Biggest literary publication — aggregates all serious coverage | None | 45 |
+| Five Books (Playwright) | Expert curated lists — intellectual legitimacy + subtitle angles | None | 40 |
+| LibraryThing (Playwright) | Serious literary catalogers — more academic than Goodreads | None | 38 |
+| Substack (Playwright) | Literary newsletter reader engagement | None | 38 |
+| Open Library API | Borrow counts + reading lists — actual PD reader demand | None | 35 |
+| The StoryGraph (Playwright) | Goodreads alternative — mood/theme tags inform subtitle angles | None | 35 |
+| Stack Exchange API | Close reading questions — deep engagement signal | None | 35 |
+| BookBub (Playwright) | 15M readers — editorial picks signal commercial literary demand | None | 30 |
+| Tumblr (Playwright) | Younger readers discovering European modernism | API key (opt.) | 28 |
+| Quora (Playwright) | "Best books on X" intent signal — reveals gaps | None | 25 |
 
 ## Subreddits monitored
 
