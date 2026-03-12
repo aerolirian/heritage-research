@@ -6,13 +6,22 @@ from collections import defaultdict
 
 # Signal weights (higher = more urgent)
 SOURCE_WEIGHTS = {
-    "tmdb": 80,      # upcoming film/TV adaptation — strongest urgency
-    "reddit": 50,    # social discussion velocity
-    "gutenberg": 40, # sustained download demand
-    "trends": 45,    # search momentum spike
-    "hn": 35,        # intellectual discourse
-    "brave": 30,     # news/op-ed mentions
-    "goodreads": 35, # reader-driven list traction
+    "tmdb": 80,          # upcoming film/TV adaptation — strongest urgency
+    "anniversary": 70,   # centennial — defined media window, now or never
+    "wikipedia": 65,     # traffic spike = something just happened culturally
+    "reddit": 50,        # social discussion velocity
+    "trends": 45,        # search momentum spike
+    "gutenberg": 40,     # sustained download demand
+    "youtube": 40,       # video essay = intellectual resurgence, HC audience
+    "goodreads": 35,     # reader-driven list traction
+    "hn": 35,            # intellectual discourse
+    "letterboxd": 35,    # film-literary audience overlap
+    "opensyllabus": 35,  # institutional/academic teaching signal
+    "tiktok": 30,        # booktok organic traction
+    "brave": 30,         # news/op-ed mentions
+    "instagram": 25,     # aesthetic/visual traction
+    "amazon": 25,        # competitor gap analysis
+    "twitter": 25,       # discourse signal
 }
 
 KNOWN_CATALOG = {

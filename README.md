@@ -16,18 +16,25 @@ Target: 10–20 ranked candidates per weekly sweep.
 
 ## Data sources
 
-| Source | Signal | Auth |
-|--------|--------|------|
-| Reddit (PRAW) | Discussion velocity, contemporary angles | API key (see below) |
-| Hacker News API | Intellectual discourse, book threads | None |
-| Google Trends (pytrends) | Search momentum | None |
-| Gutenberg download rankings | Sustained PD demand | None |
-| TMDB | Upcoming film/TV adaptations | API key |
-| OMDB | Existing adaptation sentiment | API key |
-| Brave Search API | News, op-eds, speeches referencing authors | API key |
-| Amazon (Playwright) | Competitor editions, BSR gaps | None |
-| Goodreads (Playwright) | List rankings, annotated shelf traction, reader momentum | None |
-| BookTok/Instagram (Playwright) | Social traction, cover aesthetics | None |
+| Source | Signal | Auth | Weight |
+|--------|--------|------|--------|
+| TMDB | Upcoming film/TV adaptations | API key | 80 |
+| Anniversary calendar | Publication centennials — defined media window | None | 70 |
+| Wikipedia pageviews | Author/title traffic spikes — something just happened | None | 65 |
+| Reddit (PRAW) | Discussion velocity across 30 subreddits | API key | 50 |
+| Google Trends (pytrends) | Search momentum spikes | None | 45 |
+| Gutenberg download rankings | Sustained PD download demand | None | 40 |
+| YouTube | Literary/philosophical video essays | API key (optional) | 40 |
+| Goodreads (Playwright) | List rankings, annotated shelf traction | None | 35 |
+| Hacker News API | Intellectual discourse, book threads | None | 35 |
+| Letterboxd (Playwright) | Film-literary adaptation community | None | 35 |
+| OpenSyllabus (Playwright) | University course teaching frequency | None | 35 |
+| TikTok/BookTok (Playwright) | Organic social traction, angles | None | 30 |
+| Brave Search API | News, op-eds, speeches referencing authors | API key | 30 |
+| Instagram (Playwright) | Cover aesthetics, visual traction | None | 25 |
+| Amazon (Playwright) | Competitor editions, BSR gaps | None | 25 |
+| Twitter/X (Playwright) | Discourse, viral essay threads | None | 25 |
+| OMDB | Existing adaptation sentiment | API key | — |
 
 ## Subreddits monitored
 

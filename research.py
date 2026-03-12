@@ -25,7 +25,10 @@ def load_config():
 
 def cmd_sweep(args, config):
     sources = args.source.split(",") if args.source else [
-        "reddit", "hn", "gutenberg", "tmdb", "trends", "brave", "goodreads"
+        "reddit", "hn", "gutenberg", "tmdb", "trends", "brave",
+        "goodreads", "wikipedia", "anniversary", "youtube",
+        "amazon", "tiktok", "instagram", "twitter",
+        "letterboxd", "opensyllabus",
     ]
     all_candidates = []
     for source in sources:
@@ -69,6 +72,24 @@ def run_source(source, config):
         from sources.brave_scanner import scan
     elif source == "goodreads":
         from sources.goodreads_scanner import scan
+    elif source == "wikipedia":
+        from sources.wikipedia_scanner import scan
+    elif source == "anniversary":
+        from sources.anniversary_scanner import scan
+    elif source == "youtube":
+        from sources.youtube_scanner import scan
+    elif source == "amazon":
+        from sources.amazon_scanner import scan
+    elif source == "tiktok":
+        from sources.tiktok_scanner import scan
+    elif source == "instagram":
+        from sources.instagram_scanner import scan
+    elif source == "twitter":
+        from sources.twitter_scanner import scan
+    elif source == "letterboxd":
+        from sources.letterboxd_scanner import scan
+    elif source == "opensyllabus":
+        from sources.opensyllabus_scanner import scan
     else:
         raise ValueError(f"Unknown source: {source}")
     return scan(config)
