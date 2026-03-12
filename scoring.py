@@ -35,6 +35,8 @@ SOURCE_WEIGHTS = {
     "bookbub": 30,       # commercial demand signal
     "tumblr": 28,        # younger readers discovering classics
     "quora": 25,         # intent signal (what readers are searching for)
+    "omdb": 30,          # adaptation quality data — intro critique ammunition
+    "googlebooks": 20,   # competitor edition gap analysis
 }
 
 KNOWN_CATALOG = {

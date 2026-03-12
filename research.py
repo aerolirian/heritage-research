@@ -32,6 +32,7 @@ def cmd_sweep(args, config):
         "librarything", "storygraph", "substack", "lithub",
         "marginalian", "fivebooks", "quora", "podcast",
         "openlibrary", "tumblr", "bookbub", "stackexchange",
+        "omdb", "googlebooks",
     ]
     all_candidates = []
     for source in sources:
@@ -117,6 +118,10 @@ def run_source(source, config):
         from sources.bookbub_scanner import scan
     elif source == "stackexchange":
         from sources.stackexchange_scanner import scan
+    elif source == "omdb":
+        from sources.omdb_scanner import scan
+    elif source == "googlebooks":
+        from sources.googlebooks_scanner import scan
     else:
         raise ValueError(f"Unknown source: {source}")
     return scan(config)

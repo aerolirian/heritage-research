@@ -8,5 +8,7 @@
   "youtube_api_key": "",
   "tumblr_api_key": "",
   "stackexchange_api_key": "",
+  "omdb_api_key": "",
+  "google_books_api_key": "",
   "openai_api_key": ""
 }

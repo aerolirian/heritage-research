@@ -1,69 +1,98 @@
 """
 Literary Hub scanner — biggest online literary publication.
 Aggregates coverage from NYT, New Yorker, Guardian, Paris Review, etc.
-What's trending on LitHub = what the entire serious literary readership is talking about.
-Also scrapes: most-read lists, essay picks, book recommendations.
+What's trending on LitHub = what the entire serious literary readership is seeing.
+Uses RSS feed (lithub.com/feed/) — reliable, no Playwright needed.
+Also monitors: The Millions, Electric Literature, Los Angeles Review of Books.
 """
-from playwright.sync_api import sync_playwright
+import requests
+import xml.etree.ElementTree as ET
+from datetime import date, timedelta
 
-PAGES = [
-    ("https://lithub.com/category/craft-and-criticism/", "criticism"),
-    ("https://lithub.com/category/the-reading-life/", "reading_life"),
-    ("https://lithub.com/most-read/", "most_read"),
-    ("https://lithub.com/category/book-reviews/", "reviews"),
+PUBLICATION_FEEDS = [
+    ("https://lithub.com/feed/", "Literary Hub"),
+    ("https://themillions.com/feed", "The Millions"),
+    ("https://electricliterature.com/feed/", "Electric Literature"),
+    ("https://lareviewofbooks.org/feed/", "LA Review of Books"),
+    ("https://theparisreview.org/feed", "The Paris Review"),
+    ("https://www.thenation.com/feed/?post_type=article&subject=books-and-arts", "The Nation Books"),
+    ("https://www.nybooks.com/feed/", "New York Review of Books"),
+    ("https://bostonreview.net/feed/", "Boston Review"),
+    ("https://thepointmag.com/feed/", "The Point Magazine"),
 ]
 
-AUTHOR_KEYWORDS = [
-    "Mann", "Kafka", "Joyce", "Dostoevsky", "Tolstoy", "Hamsun",
-    "Hemingway", "Fitzgerald", "Woolf", "Lewis", "Conrad", "Flaubert",
-    "Chekhov", "Zola", "Hardy", "Dickens", "Hugo", "Balzac",
-    "Nietzsche", "Camus", "Sartre", "Beckett", "Faulkner", "Steinbeck",
-]
+CUTOFF_DAYS = 90
+
+AUTHOR_KEYWORDS = {
+    "mann": "Thomas Mann", "kafka": "Franz Kafka", "joyce": "James Joyce",
+    "dostoevsky": "Fyodor Dostoevsky", "tolstoy": "Leo Tolstoy",
+    "hamsun": "Knut Hamsun", "hemingway": "Ernest Hemingway",
+    "fitzgerald": "F. Scott Fitzgerald", "woolf": "Virginia Woolf",
+    "lewis": "Sinclair Lewis", "flaubert": "Gustave Flaubert",
+    "chekhov": "Anton Chekhov", "nietzsche": "Friedrich Nietzsche",
+    "camus": "Albert Camus", "rilke": "Rainer Maria Rilke",
+    "zola": "Emile Zola", "faulkner": "William Faulkner",
+    "steinbeck": "John Steinbeck", "hardy": "Thomas Hardy",
+    "dickens": "Charles Dickens", "hugo": "Victor Hugo",
+    "musil": "Robert Musil", "broch": "Hermann Broch",
+    "svevo": "Italo Svevo", "pirandello": "Luigi Pirandello",
+    "proust": "Marcel Proust", "gide": "André Gide",
+}
 
 
 def scan(config):
     candidates = []
+    cutoff = date.today() - timedelta(days=CUTOFF_DAYS)
 
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
-        page.set_extra_http_headers({"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"})
+    for feed_url, pub_name in PUBLICATION_FEEDS:
+        try:
+            resp = requests.get(feed_url, timeout=15, headers={
+                "User-Agent": "heritage-research/1.0 (https://github.com/aerolirian/heritage-research)"
+            })
+            if resp.status_code != 200:
+                continue
 
-        for url, section in PAGES:
-            try:
-                page.goto(url, timeout=20000)
-                page.wait_for_timeout(2000)
+            root = ET.fromstring(resp.content)
 
-                articles = page.evaluate("""
-                    () => Array.from(document.querySelectorAll('article, .post, h2 a, h3 a'))
-                    .slice(0, 30)
-                    .map(el => {
-                        const a = el.tagName === 'A' ? el : el.querySelector('a');
-                        return {
-                            title: (el.querySelector('h2, h3, .entry-title') || el).innerText || '',
-                            url: a ? a.href : '',
-                        };
-                    })
-                    .filter(a => a.title.length > 10)
-                """)
+            for item in root.findall(".//item"):
+                title_el = item.find("title")
+                desc_el = item.find("description")
+                date_el = item.find("pubDate")
+                link_el = item.find("link")
 
-                for article in articles:
-                    title = article.get("title", "")
-                    matched = [kw for kw in AUTHOR_KEYWORDS if kw.lower() in title.lower()]
-                    if matched:
+                if title_el is None:
+                    continue
+
+                title = title_el.text or ""
+                desc = desc_el.text or "" if desc_el is not None else ""
+                link = link_el.text or "" if link_el is not None else ""
+                pub_date_str = date_el.text or "" if date_el is not None else ""
+
+                try:
+                    from email.utils import parsedate_to_datetime
+                    pub_date = parsedate_to_datetime(pub_date_str).date()
+                    if pub_date < cutoff:
+                        continue
+                except Exception:
+                    pass
+
+                combined = (title + " " + desc[:500]).lower()
+                for kw, full_name in AUTHOR_KEYWORDS.items():
+                    if kw in combined:
                         candidates.append({
                             "source": "lithub",
-                            "author": matched[0],
+                            "author": full_name,
                             "title": "",
+                            "lithub_pub": pub_name,
                             "lithub_title": title,
-                            "lithub_section": section,
-                            "lithub_url": article.get("url", ""),
-                            "why_now": f"Literary Hub {section}: '{title[:80]}'",
-                            "raw_score": 40,
+                            "lithub_url": link,
+                            "pub_date": pub_date_str[:16],
+                            "why_now": f"{pub_name}: '{title[:70]}'",
+                            "raw_score": 45,
                         })
-            except Exception as e:
-                print(f"  [lithub/{section}] {e}")
+                        break
 
-        browser.close()
+        except Exception as e:
+            print(f"  [lithub/{pub_name}] {e}")
 
     return candidates

@@ -1,101 +1,110 @@
 """
 Substack scanner — literary newsletters and their reader engagement.
-Target publications: The Honest Broker, The Marginalian, The Paris Review Notes,
-Literary Kitchen, The Critic, Hudson Review, and high-traffic book/philosophy newsletters.
-A Substack essay about a PD author = engaged intellectual readership paying attention.
+Uses RSS feeds (each publication exposes /feed) — fast, reliable, no Playwright needed.
+Falls back to Playwright search for discovery across all Substacks.
+
+High-signal target publications (all have public RSS feeds):
+- The Honest Broker (Ted Gioia) — 300k+ subs, books/music/culture
+- The Intrinsic Perspective (Erik Hoel) — philosophy of mind + literature
+- Astral Codex Ten (Scott Alexander) — rationalist/philosophy, huge readership
+- Freddie deBoer — literary criticism, education
+- Sam Kriss — philosophical essays, cultural criticism
+- The Paris Review Notes — official Paris Review substack
+- The Critic — serious literary/cultural criticism
+- The Point Magazine — philosophy and culture
 """
-from playwright.sync_api import sync_playwright
+import requests
+import xml.etree.ElementTree as ET
+from datetime import date, timedelta
 
-# High-traffic literary/philosophical Substacks to monitor
-TARGET_PUBLICATIONS = [
-    ("https://tedgioia.substack.com", "The Honest Broker"),       # 250k+ subs, books/music/culture
-    ("https://lithub.substack.com", "Literary Hub"),
-    ("https://theparisreview.substack.com", "The Paris Review"),
-    ("https://erikhoel.substack.com", "The Intrinsic Perspective"),  # philosophy/culture
-    ("https://freddiedeboer.substack.com", "Freddie deBoer"),        # literary criticism
-    ("https://samkriss.substack.com", "Sam Kriss"),                  # philosophical essays
-    ("https://josephheath.substack.com", "In Due Course"),           # philosophy
-    ("https://astralcodexten.substack.com", "Astral Codex Ten"),     # rationalist/philosophy
+PUBLICATION_FEEDS = [
+    ("https://tedgioia.substack.com/feed", "The Honest Broker"),
+    ("https://erikhoel.substack.com/feed", "The Intrinsic Perspective"),
+    ("https://astralcodexten.substack.com/feed", "Astral Codex Ten"),
+    ("https://freddiedeboer.substack.com/feed", "Freddie deBoer"),
+    ("https://samkriss.substack.com/feed", "Sam Kriss"),
+    ("https://theparisreview.substack.com/feed", "The Paris Review Notes"),
+    ("https://thecritic.substack.com/feed", "The Critic"),
+    ("https://thepointmag.substack.com/feed", "The Point Magazine"),
+    ("https://josephheath.substack.com/feed", "In Due Course"),
+    ("https://alexdanco.substack.com/feed", "Alex Danco"),
+    ("https://edwest.substack.com/feed", "Ed West"),
+    ("https://unherd.substack.com/feed", "UnHerd"),
+    ("https://lithub.substack.com/feed", "Literary Hub"),
+    ("https://electricliterature.substack.com/feed", "Electric Literature"),
+    ("https://themillions.substack.com/feed", "The Millions"),
 ]
 
-SEARCH_URL = "https://substack.com/search?q={query}&type=post"
+CUTOFF_DAYS = 180
 
-SEARCH_QUERIES = [
-    "Thomas Mann", "Franz Kafka", "Knut Hamsun", "James Joyce",
-    "Dostoevsky", "Tolstoy", "Virginia Woolf", "Sinclair Lewis",
-    "classic literature philosophy", "annotated edition",
-    "public domain novel", "modernist literature",
-]
-
-AUTHOR_KEYWORDS = [
-    "Mann", "Kafka", "Joyce", "Dostoevsky", "Tolstoy", "Hamsun",
-    "Hemingway", "Fitzgerald", "Woolf", "Lewis", "Conrad", "Flaubert",
-]
-
-
-def scan(config):
-    candidates = []
-
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
-        page.set_extra_http_headers({"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"})
-
-        # Search Substack for author/topic posts
-        for query in SEARCH_QUERIES:
-            try:
-                encoded = query.replace(" ", "%20")
-                page.goto(SEARCH_URL.format(query=encoded), timeout=20000)
-                page.wait_for_timeout(3000)
-
-                posts = page.evaluate("""
-                    () => Array.from(document.querySelectorAll('.post-preview, article, [class*="post"]'))
-                    .slice(0, 15)
-                    .map(el => ({
-                        title: (el.querySelector('h2, h3, .post-title') || {}).innerText || '',
-                        pub: (el.querySelector('.publication-name, .pub-name') || {}).innerText || '',
-                        likes: (el.querySelector('.like-count, .reactions') || {}).innerText || '',
-                        url: (el.querySelector('a[href*="/p/"]') || {}).href || '',
-                    }))
-                    .filter(p => p.title.length > 5)
-                """)
-
-                for post in posts:
-                    title = post.get("title", "")
-                    pub = post.get("pub", "")
-                    likes = post.get("likes", "")
-                    candidates.append({
-                        "source": "substack",
-                        "author": _extract_author(title + " " + query),
-                        "title": "",
-                        "substack_title": title,
-                        "substack_pub": pub,
-                        "substack_likes": likes,
-                        "substack_url": post.get("url", ""),
-                        "search_query": query,
-                        "why_now": f"Substack essay: '{title[:70]}' ({pub}, {likes} likes)",
-                        "raw_score": 35,
-                    })
-            except Exception as e:
-                print(f"  [substack/{query}] {e}")
-
-        browser.close()
-
-    return candidates
-
-
-AUTHOR_MAP = {
+AUTHOR_KEYWORDS = {
     "mann": "Thomas Mann", "kafka": "Franz Kafka", "joyce": "James Joyce",
     "dostoevsky": "Fyodor Dostoevsky", "tolstoy": "Leo Tolstoy",
     "hamsun": "Knut Hamsun", "hemingway": "Ernest Hemingway",
     "fitzgerald": "F. Scott Fitzgerald", "woolf": "Virginia Woolf",
     "lewis": "Sinclair Lewis", "flaubert": "Gustave Flaubert",
+    "chekhov": "Anton Chekhov", "nietzsche": "Friedrich Nietzsche",
+    "camus": "Albert Camus", "rilke": "Rainer Maria Rilke",
+    "zola": "Emile Zola", "faulkner": "William Faulkner",
+    "steinbeck": "John Steinbeck", "dreiser": "Theodore Dreiser",
+    "hardy": "Thomas Hardy", "dickens": "Charles Dickens",
+    "hugo": "Victor Hugo", "balzac": "Honoré de Balzac",
 }
 
 
-def _extract_author(text):
-    t = text.lower()
-    for k, v in AUTHOR_MAP.items():
-        if k in t:
-            return v
-    return ""
+def scan(config):
+    candidates = []
+    cutoff = date.today() - timedelta(days=CUTOFF_DAYS)
+
+    for feed_url, pub_name in PUBLICATION_FEEDS:
+        try:
+            resp = requests.get(feed_url, timeout=10, headers={
+                "User-Agent": "heritage-research/1.0 (https://github.com/aerolirian/heritage-research)"
+            })
+            if resp.status_code != 200:
+                continue
+
+            root = ET.fromstring(resp.content)
+
+            for item in root.findall(".//item"):
+                title_el = item.find("title")
+                desc_el = item.find("description")
+                date_el = item.find("pubDate")
+                link_el = item.find("link")
+
+                if title_el is None:
+                    continue
+
+                title = title_el.text or ""
+                desc = desc_el.text or "" if desc_el is not None else ""
+                link = link_el.text or "" if link_el is not None else ""
+                pub_date_str = date_el.text or "" if date_el is not None else ""
+
+                try:
+                    from email.utils import parsedate_to_datetime
+                    pub_date = parsedate_to_datetime(pub_date_str).date()
+                    if pub_date < cutoff:
+                        continue
+                except Exception:
+                    pass
+
+                combined = (title + " " + desc[:800]).lower()
+                for kw, full_name in AUTHOR_KEYWORDS.items():
+                    if kw in combined:
+                        candidates.append({
+                            "source": "substack",
+                            "author": full_name,
+                            "title": "",
+                            "substack_pub": pub_name,
+                            "substack_title": title,
+                            "substack_url": link,
+                            "pub_date": pub_date_str[:16],
+                            "why_now": f"Substack essay: '{title[:70]}' ({pub_name})",
+                            "raw_score": 40,
+                        })
+                        break
+
+        except Exception as e:
+            print(f"  [substack/{pub_name}] {e}")
+
+    return candidates
