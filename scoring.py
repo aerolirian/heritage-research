@@ -12,6 +12,7 @@ SOURCE_WEIGHTS = {
     "trends": 45,    # search momentum spike
     "hn": 35,        # intellectual discourse
     "brave": 30,     # news/op-ed mentions
+    "goodreads": 35, # reader-driven list traction
 }
 
 KNOWN_CATALOG = {

@@ -25,7 +25,7 @@ def load_config():
 
 def cmd_sweep(args, config):
     sources = args.source.split(",") if args.source else [
-        "reddit", "hn", "gutenberg", "tmdb", "trends", "brave"
+        "reddit", "hn", "gutenberg", "tmdb", "trends", "brave", "goodreads"
     ]
     all_candidates = []
     for source in sources:
@@ -67,6 +67,8 @@ def run_source(source, config):
         from sources.trends import scan
     elif source == "brave":
         from sources.brave_scanner import scan
+    elif source == "goodreads":
+        from sources.goodreads_scanner import scan
     else:
         raise ValueError(f"Unknown source: {source}")
     return scan(config)

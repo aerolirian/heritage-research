@@ -26,7 +26,8 @@ Target: 10–20 ranked candidates per weekly sweep.
 | OMDB | Existing adaptation sentiment | API key |
 | Brave Search API | News, op-eds, speeches referencing authors | API key |
 | Amazon (Playwright) | Competitor editions, BSR gaps | None |
-| BookTok/Goodreads (Playwright) | Social traction, cover aesthetics | None |
+| Goodreads (Playwright) | List rankings, annotated shelf traction, reader momentum | None |
+| BookTok/Instagram (Playwright) | Social traction, cover aesthetics | None |
 
 ## Subreddits monitored
 
