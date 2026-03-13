@@ -10,15 +10,15 @@ from datetime import date, timedelta
 
 # High-signal literary/philosophical podcasts with public RSS feeds
 PODCAST_FEEDS = [
-    ("https://feeds.megaphone.fm/newyorkerfiction", "New Yorker Fiction Podcast"),
-    ("https://feeds.transistor.fm/the-history-of-literature", "History of Literature"),
-    ("https://literarydisco.libsyn.com/rss", "Literary Disco"),
-    ("https://feeds.feedburner.com/bbcradio3inourtime", "In Our Time (BBC R3)"),
+    ("https://publicfeeds.net/f/6232/new-yorker-fiction", "New Yorker Fiction Podcast"),
+    ("https://feeds.megaphone.fm/history-of-literature", "History of Literature"),
+    ("https://feeds.feedburner.com/literarydisco", "Literary Disco"),
+    ("https://podcasts.files.bbci.co.uk/b006qykl.rss", "In Our Time (BBC R3)"),
     ("https://feeds.npr.org/510019/podcast.xml", "NPR Books"),
-    ("https://feeds.feedburner.com/newbooksnetwork", "New Books Network"),
+    ("https://feeds.megaphone.fm/LIT4543917034", "New Books Network"),
     ("https://philosophybites.libsyn.com/rss", "Philosophy Bites"),
     ("https://partiallyexaminedlife.com/feed/podcast/", "The Partially Examined Life"),
-    ("https://historyofphilosophy.net/feed", "History of Philosophy Without Gaps"),
+    ("https://feed.podbean.com/hopwag/feed.xml", "History of Philosophy Without Gaps"),
     ("https://feeds.soundcloud.com/users/soundcloud:users:211911700/sounds.rss", "Entitled Opinions"),
 ]
 

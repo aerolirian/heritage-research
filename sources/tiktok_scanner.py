@@ -87,7 +87,7 @@ async def _scan_async(ms_token=None):
         # Search for specific authors
         for query in AUTHOR_SEARCHES:
             try:
-                async for video in api.search.videos(query, count=20):
+                async for video in api.search.users(query, count=20):
                     text = (video.as_dict.get("desc", "") or "").lower()
                     stats = video.as_dict.get("stats", {})
                     plays = stats.get("playCount", 0)
