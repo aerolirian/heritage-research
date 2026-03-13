@@ -13,3 +13,4 @@ instaloader>=4.13.0       # Instagram (github.com/instaloader/instaloader)
 twscrape>=0.17.0          # Twitter/X (github.com/vladkens/twscrape)
 letterboxdpy>=6.0.0       # Letterboxd (github.com/nmcassa/letterboxdpy)
 storygraph-api>=0.2.0     # The StoryGraph (github.com/ym496/storygraph-api)
+tweepy>=4.14.0            # Official X/Twitter API — posting via @heritagecanon
