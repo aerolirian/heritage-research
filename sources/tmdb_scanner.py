@@ -30,13 +30,14 @@ def scan(config):
     today = date.today()
     window_end = today + timedelta(days=365)
 
+    headers = {"Authorization": f"Bearer {api_key}", "accept": "application/json"}
+
     for title in KNOWN_PD_WORKS:
         try:
             # Search for upcoming movie/TV
             resp = requests.get(f"{TMDB_BASE}/search/multi", params={
-                "api_key": api_key,
                 "query": title,
-            }, timeout=10)
+            }, headers=headers, timeout=10)
             resp.raise_for_status()
             results = resp.json().get("results", [])
 
