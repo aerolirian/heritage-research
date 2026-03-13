@@ -47,7 +47,7 @@ def scan(config):
 
     for title in SEARCH_TITLES:
         try:
-            results = sg.search(sg, title)
+            results = sg.search(title)
             if not results:
                 continue
             book = results[0] if isinstance(results, list) else results
