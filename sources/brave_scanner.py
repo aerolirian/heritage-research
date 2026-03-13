@@ -7,9 +7,9 @@ import requests
 BRAVE_API = "https://api.search.brave.com/res/v1/web/search"
 
 SEARCH_QUERIES = [
-    "public domain classic novel annotated edition 2025",
+    "public domain classic novel annotated edition 2026",
     "Thomas Mann relevance today",
-    "Kafka bureaucracy 2025",
+    "Kafka bureaucracy 2026",
     "Sinclair Lewis America fascism",
     "Dostoevsky modern relevance",
     "Hamsun nature isolation modern",
@@ -17,6 +17,18 @@ SEARCH_QUERIES = [
     "classic literature film adaptation 2025 2026",
     "Nietzsche resurgence contemporary",
     "Tolstoy war modern",
+]
+
+# X/Twitter-specific queries — covers the gap when twscrape has no active account
+X_QUERIES = [
+    "site:x.com Thomas Mann",
+    "site:x.com Kafka book",
+    "site:x.com Sinclair Lewis",
+    "site:x.com Knut Hamsun",
+    "site:x.com James Joyce Portrait Artist",
+    "site:x.com F. Scott Fitzgerald Gatsby",
+    "site:x.com classic literature philosophical",
+    "site:x.com public domain annotated edition",
 ]
 
 
@@ -29,7 +41,7 @@ def scan(config):
     candidates = []
     seen_urls = set()
 
-    for query in SEARCH_QUERIES:
+    for query in SEARCH_QUERIES + X_QUERIES:
         try:
             resp = requests.get(BRAVE_API, params={
                 "q": query,
@@ -55,8 +67,9 @@ def scan(config):
                                     "Hamsun", "Dostoevsky", "Tolstoy", "Hemingway",
                                     "Fitzgerald", "Conrad", "Chekhov", "Flaubert"]:
                     if author_last.lower() in title.lower() or author_last.lower() in desc.lower():
+                        is_x = "site:x.com" in query
                         candidates.append({
-                            "source": "brave",
+                            "source": "twitter" if is_x else "brave",
                             "author": author_last,
                             "title": "",
                             "news_title": title,
