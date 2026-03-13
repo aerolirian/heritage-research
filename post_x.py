@@ -54,8 +54,8 @@ def get_client(config):
     return tweepy.Client(
         consumer_key=config["x_api_key"],
         consumer_secret=config["x_api_secret"],
-        access_token=config["x_access_token"],
-        access_token_secret=config["x_access_token_secret"],
+        access_token=config.get("x_heritagecanon_access_token") or config["x_access_token"],
+        access_token_secret=config.get("x_heritagecanon_access_token_secret") or config["x_access_token_secret"],
     )
 
 
