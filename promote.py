@@ -119,7 +119,8 @@ def generate_alerts(candidates, catalog):
     published_titles = {b["title"].lower(): b for b in catalog}
 
     for c in candidates:
-        author_last = (c.get("author", "").split()[-1] or "").lower()
+        author_parts = c.get("author", "").split()
+        author_last = author_parts[-1].lower() if author_parts else ""
         title_lower = c.get("title", "").lower()
         book = published_authors.get(author_last) or published_titles.get(title_lower)
         if not book:
@@ -242,7 +243,8 @@ def generate_outreach(candidates, catalog, config):
         if source not in amplifier_sources:
             continue
 
-        author_last = (c.get("author", "").split()[-1] or "").lower()
+        author_parts = c.get("author", "").split()
+        author_last = author_parts[-1].lower() if author_parts else ""
         book = published_authors.get(author_last)
         if not book:
             continue
@@ -315,7 +317,8 @@ def generate_content(candidates, catalog, config):
     high_signal = [c for c in candidates if c.get("score", 0) > 30][:10]
 
     for c in high_signal:
-        author_last = (c.get("author", "").split()[-1] or "").lower()
+        author_parts = c.get("author", "").split()
+        author_last = author_parts[-1].lower() if author_parts else ""
         book = published_authors.get(author_last)
         if not book:
             continue
