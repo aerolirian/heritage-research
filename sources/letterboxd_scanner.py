@@ -6,7 +6,8 @@ Uses letterboxdpy (github.com/nmcassa/letterboxdpy) — 140 stars, last commit
 ~Mar 2026, actively maintained. Scrapes public Letterboxd data cleanly.
 No API key needed.
 """
-from letterboxdpy import movie, search
+from letterboxdpy import movie
+from letterboxdpy.search import get_film_slug_from_title
 
 ADAPTATION_SEARCHES = [
     ("Wuthering Heights", "Emily Brontë"),
@@ -37,12 +38,7 @@ def scan(config):
 
     for title, author in ADAPTATION_SEARCHES:
         try:
-            results = search.search_films(title)
-            if not results:
-                continue
-
-            # Take first result (most relevant)
-            film_slug = results[0].get("slug", "")
+            film_slug = get_film_slug_from_title(title)
             if not film_slug:
                 continue
 

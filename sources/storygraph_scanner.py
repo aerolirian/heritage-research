@@ -7,7 +7,7 @@ Uses storygraph-api (github.com/ym496/storygraph-api) — Python scraper wrapper
 Requires a StoryGraph account for full data.
 Falls back to Playwright for public browse pages if no credentials.
 """
-from storygraph_api import StoryGraph
+from storygraph_api import Book
 
 SEARCH_TITLES = [
     "Buddenbrooks", "The Trial", "Growth of the Soil", "Ulysses",
@@ -43,41 +43,24 @@ def scan(config):
     username = config.get("storygraph_username", "")
     password = config.get("storygraph_password", "")
 
-    if not username or not password:
-        print("  [storygraph] no credentials — skipping (add storygraph_username + storygraph_password to config)")
-        return _scan_playwright()
+    sg = Book()
 
-    try:
-        sg = StoryGraph(username, password)
-
-        for title in SEARCH_TITLES:
-            try:
-                results = sg.search_books(title)
-                if not results:
-                    continue
-                book = results[0]
-                author = AUTHOR_MAP.get(title.lower(), "")
-                moods = ", ".join(book.get("moods", [])[:5])
-                pace = book.get("pace", "")
-                rating = book.get("average_rating", "")
-                ratings_count = book.get("ratings_count", 0)
-
-                candidates.append({
-                    "source": "storygraph",
-                    "author": author,
-                    "title": title,
-                    "storygraph_rating": rating,
-                    "storygraph_ratings": ratings_count,
-                    "storygraph_moods": moods,
-                    "storygraph_pace": pace,
-                    "why_now": f"StoryGraph: {rating}/5 ({ratings_count} ratings) — moods: {moods}",
-                    "raw_score": 30 + (float(rating) * 2 if rating else 0),
-                })
-            except Exception as e:
-                print(f"  [storygraph/{title}] {e}")
-
-    except Exception as e:
-        print(f"  [storygraph/login] {e}")
+    for title in SEARCH_TITLES:
+        try:
+            results = sg.search(sg, title)
+            if not results:
+                continue
+            book = results[0] if isinstance(results, list) else results
+            author = AUTHOR_MAP.get(title.lower(), "")
+            candidates.append({
+                "source": "storygraph",
+                "author": author,
+                "title": title,
+                "why_now": f"StoryGraph: '{title}' found",
+                "raw_score": 28,
+            })
+        except Exception as e:
+            print(f"  [storygraph/{title}] {e}")
 
     return candidates
 

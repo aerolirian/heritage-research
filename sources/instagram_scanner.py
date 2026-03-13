@@ -52,6 +52,7 @@ def scan(config):
         download_comments=False,
         save_metadata=False,
         quiet=True,
+        max_connection_attempts=1,  # don't retry on 429/403
     )
 
     # Load session if available (burner account)
