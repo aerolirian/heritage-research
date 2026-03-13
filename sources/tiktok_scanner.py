@@ -84,33 +84,8 @@ async def _scan_async(ms_token=None):
             except Exception as e:
                 print(f"  [tiktok/#{hashtag}] {e}")
 
-        # Search for specific authors
-        for query in AUTHOR_SEARCHES:
-            try:
-                async for video in api.search.users(query, count=20):
-                    text = (video.as_dict.get("desc", "") or "").lower()
-                    stats = video.as_dict.get("stats", {})
-                    plays = stats.get("playCount", 0)
-                    likes = stats.get("diggCount", 0)
-
-                    author_match = next(
-                        (full for kw, full in AUTHOR_KEYWORDS.items() if kw in query.lower() or kw in text),
-                        ""
-                    )
-                    if author_match:
-                        candidates.append({
-                            "source": "tiktok",
-                            "author": author_match,
-                            "title": "",
-                            "tiktok_search": query,
-                            "tiktok_desc": text[:200],
-                            "tiktok_plays": plays,
-                            "tiktok_likes": likes,
-                            "why_now": f"TikTok search '{query}': {plays:,} plays — '{text[:60]}'",
-                            "raw_score": min(80, 20 + (plays / 100000) + (likes / 10000)),
-                        })
-            except Exception as e:
-                print(f"  [tiktok/search/{query}] {e}")
+        # Note: TikTokApi search.videos removed; search.users returns User objects not videos.
+        # Author searches removed — hashtag scan above provides sufficient signal.
 
     return candidates
 

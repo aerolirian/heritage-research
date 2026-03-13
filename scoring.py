@@ -57,6 +57,39 @@ KNOWN_CATALOG = {
     "Zola": ("Emile Zola", "Germinal"),
 }
 
+# Title → author lookup so TMDB/title-only candidates merge with author-keyed entries
+TITLE_AUTHOR_MAP = {
+    "wuthering heights": "Emily Brontë",
+    "jane eyre": "Charlotte Brontë",
+    "the odyssey": "Homer",
+    "frankenstein": "Mary Shelley",
+    "dracula": "Bram Stoker",
+    "crime and punishment": "Fyodor Dostoevsky",
+    "anna karenina": "Leo Tolstoy",
+    "war and peace": "Leo Tolstoy",
+    "the death of ivan ilych": "Leo Tolstoy",
+    "madame bovary": "Gustave Flaubert",
+    "the great gatsby": "F. Scott Fitzgerald",
+    "the sun also rises": "Ernest Hemingway",
+    "a farewell to arms": "Ernest Hemingway",
+    "the old man and the sea": "Ernest Hemingway",
+    "death in venice": "Thomas Mann",
+    "the magic mountain": "Thomas Mann",
+    "buddenbrooks": "Thomas Mann",
+    "the trial": "Franz Kafka",
+    "the metamorphosis": "Franz Kafka",
+    "ulysses": "James Joyce",
+    "mrs dalloway": "Virginia Woolf",
+    "to the lighthouse": "Virginia Woolf",
+    "doctor jekyll": "Robert Louis Stevenson",
+    "the picture of dorian gray": "Oscar Wilde",
+    "les misérables": "Victor Hugo",
+    "the count of monte cristo": "Alexandre Dumas",
+    "the sound and the fury": "William Faulkner",
+    "as i lay dying": "William Faulkner",
+    "heart of darkness": "Joseph Conrad",
+}
+
 
 def score_and_rank(candidates):
     """Merge, deduplicate, score, and rank all candidates."""
@@ -73,6 +106,9 @@ def score_and_rank(candidates):
     for c in candidates:
         author = _normalize_author(c.get("author", ""))
         title = c.get("title", "")
+        # If no author, try to resolve from title (e.g. TMDB candidates)
+        if not author and title:
+            author = TITLE_AUTHOR_MAP.get(title.lower().split(" (")[0], "")
         key = author or title
 
         if not key:
