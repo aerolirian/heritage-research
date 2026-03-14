@@ -6,4 +6,5 @@ output/
 promotion_output/
 *.json
 !config.example.json
+!catalog.json
 .DS_Store
