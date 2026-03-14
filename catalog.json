@@ -7,7 +7,12 @@
     "thesis_subtitle": "The Power of the Unknown",
     "genre": "Fantasy",
     "publisher": "Heritage Canon",
+    "prices": {
+      "ebook": 2.99,
+      "paperback": 9.99
+    },
     "urls": {},
+    "formats_live": [],
     "best_url": "",
     "live": false
   },
@@ -19,7 +24,12 @@
     "thesis_subtitle": "The Loss of Self and the Call of the Inhuman",
     "genre": "Horror",
     "publisher": "Heritage Canon",
+    "prices": {
+      "ebook": 1.99,
+      "paperback": 8.99
+    },
     "urls": {},
+    "formats_live": [],
     "best_url": "",
     "live": false
   },
@@ -31,7 +41,12 @@
     "thesis_subtitle": "The Limits of the Human Will",
     "genre": "Horror",
     "publisher": "Heritage Canon",
+    "prices": {
+      "ebook": 1.99,
+      "paperback": 8.99
+    },
     "urls": {},
+    "formats_live": [],
     "best_url": "",
     "live": false
   },
@@ -43,7 +58,12 @@
     "thesis_subtitle": "Truth Against Ideology and Illusion",
     "genre": "Novel",
     "publisher": "Heritage Canon",
+    "prices": {
+      "ebook": 2.99,
+      "paperback": 9.99
+    },
     "urls": {},
+    "formats_live": [],
     "best_url": "",
     "live": false
   },
@@ -55,7 +75,12 @@
     "thesis_subtitle": "The Logic of Nonsense",
     "genre": "Novel",
     "publisher": "Heritage Canon",
+    "prices": {
+      "ebook": 2.99,
+      "paperback": 9.99
+    },
     "urls": {},
+    "formats_live": [],
     "best_url": "",
     "live": false
   },
@@ -67,7 +92,12 @@
     "thesis_subtitle": "The Land's Will and Human Silence",
     "genre": "Novel",
     "publisher": "Heritage Canon",
+    "prices": {
+      "ebook": 2.99,
+      "paperback": 9.99
+    },
     "urls": {},
+    "formats_live": [],
     "best_url": "",
     "live": false
   },
@@ -79,7 +109,12 @@
     "thesis_subtitle": "Fate and Will in the Making of the Self",
     "genre": "Historical",
     "publisher": "Heritage Canon",
+    "prices": {
+      "ebook": 3.99,
+      "paperback": 12.99
+    },
     "urls": {},
+    "formats_live": [],
     "best_url": "",
     "live": false
   },
@@ -91,7 +126,12 @@
     "thesis_subtitle": "The Illusion of Endless Desire",
     "genre": "Fantasy",
     "publisher": "Heritage Canon",
+    "prices": {
+      "ebook": 2.99,
+      "paperback": 9.99
+    },
     "urls": {},
+    "formats_live": [],
     "best_url": "",
     "live": false
   },
@@ -103,7 +143,12 @@
     "thesis_subtitle": "MAGA, Putin, and the Seduction of the Past",
     "genre": "Novel",
     "publisher": "Heritage Canon",
+    "prices": {
+      "ebook": 2.99,
+      "paperback": 9.99
+    },
     "urls": {},
+    "formats_live": [],
     "best_url": "",
     "live": false
   },
@@ -115,7 +160,12 @@
     "thesis_subtitle": "What Trump, Orbán, and Marine Le Pen Owe to a Norwegian Farmer",
     "genre": "Novel",
     "publisher": "Heritage Canon",
+    "prices": {
+      "ebook": 3.99,
+      "paperback": 12.99
+    },
     "urls": {},
+    "formats_live": [],
     "best_url": "",
     "live": false
   },
@@ -127,7 +177,12 @@
     "thesis_subtitle": "Fate and Morality in Human Struggle",
     "genre": "Novel",
     "publisher": "Heritage Canon",
+    "prices": {
+      "ebook": 3.99,
+      "paperback": 12.99
+    },
     "urls": {},
+    "formats_live": [],
     "best_url": "",
     "live": false
   },
@@ -139,7 +194,12 @@
     "thesis_subtitle": "Fate and the Fracture of the Self",
     "genre": "Novel",
     "publisher": "Heritage Canon",
+    "prices": {
+      "ebook": 3.99,
+      "paperback": 12.99
+    },
     "urls": {},
+    "formats_live": [],
     "best_url": "",
     "live": false
   },
@@ -151,7 +211,12 @@
     "thesis_subtitle": "The Irish Apostate",
     "genre": "Novel",
     "publisher": "Heritage Canon",
+    "prices": {
+      "ebook": 3.99,
+      "paperback": 12.99
+    },
     "urls": {},
+    "formats_live": [],
     "best_url": "",
     "live": false
   },
@@ -163,7 +228,12 @@
     "thesis_subtitle": "Fate and the Limits of the Self",
     "genre": "ShortStories",
     "publisher": "Heritage Canon",
+    "prices": {
+      "ebook": 2.99,
+      "paperback": 9.99
+    },
     "urls": {},
+    "formats_live": [],
     "best_url": "",
     "live": false
   },
@@ -175,7 +245,12 @@
     "thesis_subtitle": "The Impossible Self of Consciousness",
     "genre": "Novel",
     "publisher": "Heritage Canon",
+    "prices": {
+      "ebook": 1.99,
+      "paperback": 8.99
+    },
     "urls": {},
+    "formats_live": [],
     "best_url": "",
     "live": false
   },
@@ -187,7 +262,12 @@
     "thesis_subtitle": "What RFK Jr. and Big Pharma Have in Common",
     "genre": "Novel",
     "publisher": "Heritage Canon",
+    "prices": {
+      "ebook": 3.99,
+      "paperback": 12.99
+    },
     "urls": {},
+    "formats_live": [],
     "best_url": "",
     "live": false
   },
@@ -199,7 +279,12 @@
     "thesis_subtitle": "The Illusion of Self-Determination",
     "genre": "Novel",
     "publisher": "Heritage Canon",
+    "prices": {
+      "ebook": 3.99,
+      "paperback": 12.99
+    },
     "urls": {},
+    "formats_live": [],
     "best_url": "",
     "live": false
   },
@@ -211,7 +296,12 @@
     "thesis_subtitle": "Fate and Hypocrisy in the Revivalist Soul",
     "genre": "Novel",
     "publisher": "Heritage Canon",
+    "prices": {
+      "ebook": 3.99,
+      "paperback": 12.99
+    },
     "urls": {},
+    "formats_live": [],
     "best_url": "",
     "live": false
   },
@@ -223,7 +313,12 @@
     "thesis_subtitle": "Fate and Freedom in the American Self",
     "genre": "Novel",
     "publisher": "Heritage Canon",
+    "prices": {
+      "ebook": 3.99,
+      "paperback": 12.99
+    },
     "urls": {},
+    "formats_live": [],
     "best_url": "",
     "live": false
   },
@@ -235,7 +330,12 @@
     "thesis_subtitle": "Fate, Decline, and the Illusion of Self",
     "genre": "Novel",
     "publisher": "Heritage Canon",
+    "prices": {
+      "ebook": 4.99,
+      "paperback": 17.99
+    },
     "urls": {},
+    "formats_live": [],
     "best_url": "",
     "live": false
   },
@@ -247,7 +347,12 @@
     "thesis_subtitle": "Lust, Oil, and the Cost Paid by Children",
     "genre": "Novella",
     "publisher": "Heritage Canon",
+    "prices": {
+      "ebook": 1.99,
+      "paperback": 8.99
+    },
     "urls": {},
+    "formats_live": [],
     "best_url": "",
     "live": false
   },
@@ -259,7 +364,9 @@
     "thesis_subtitle": "Time, Consciousness, and the Fate of Modern Man",
     "genre": "Novel",
     "publisher": "Heritage Canon",
+    "prices": {},
     "urls": {},
+    "formats_live": [],
     "best_url": "",
     "live": false
   },
@@ -271,7 +378,12 @@
     "thesis_subtitle": "Reason, Obsession, and the Abyss;\nOr, Make The Pequod Great Again",
     "genre": "Novel",
     "publisher": "Heritage Canon",
+    "prices": {
+      "ebook": 4.99,
+      "paperback": 17.99
+    },
     "urls": {},
+    "formats_live": [],
     "best_url": "",
     "live": false
   },
@@ -283,7 +395,12 @@
     "thesis_subtitle": "Civic Virtue and the Crisis of the Self",
     "genre": "Novel",
     "publisher": "Heritage Canon",
+    "prices": {
+      "ebook": 3.99,
+      "paperback": 12.99
+    },
     "urls": {},
+    "formats_live": [],
     "best_url": "",
     "live": false
   },
@@ -295,7 +412,12 @@
     "thesis_subtitle": "The Self in the Shadow of Industry",
     "genre": "Novel",
     "publisher": "Heritage Canon",
+    "prices": {
+      "ebook": 3.99,
+      "paperback": 12.99
+    },
     "urls": {},
+    "formats_live": [],
     "best_url": "",
     "live": false
   },
@@ -307,7 +429,12 @@
     "thesis_subtitle": "The Illusion of Power and the Collapse of Will",
     "genre": "ScienceFiction",
     "publisher": "Heritage Canon",
+    "prices": {
+      "ebook": 2.99,
+      "paperback": 9.99
+    },
     "urls": {},
+    "formats_live": [],
     "best_url": "",
     "live": false
   },
@@ -319,7 +446,12 @@
     "thesis_subtitle": "Loss and Longing in the Passage of Self",
     "genre": "Novel",
     "publisher": "Heritage Canon",
+    "prices": {
+      "ebook": 3.99,
+      "paperback": 12.99
+    },
     "urls": {},
+    "formats_live": [],
     "best_url": "",
     "live": false
   }
