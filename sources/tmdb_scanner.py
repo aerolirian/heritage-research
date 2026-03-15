@@ -17,6 +17,10 @@ KNOWN_PD_WORKS = [
     "The Picture of Dorian Gray", "Dracula", "Frankenstein",
     "The Great Gatsby", "The Sun Also Rises", "A Farewell to Arms",
     "The Sound and the Fury", "As I Lay Dying", "Death in Venice",
+    # High-adaptation legacy titles (previously missing)
+    "1984", "Nineteen Eighty-Four", "Romeo and Juliet",
+    "Lady Chatterley's Lover", "A Christmas Carol",
+    "Thus Spoke Zarathustra", "Meditations",
 ]
 
 

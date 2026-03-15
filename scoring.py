@@ -58,6 +58,33 @@ KNOWN_CATALOG = {
 }
 
 # Title → author lookup so TMDB/title-only candidates merge with author-keyed entries
+# Permanent adaptation legacy bonus — titles with major established film/TV adaptations
+# that predate TMDB's 180-day window. Applied after multi-source bonus.
+# Values are flat score additions (on top of base score) reflecting adaptation weight.
+KNOWN_ADAPTATIONS = {
+    "1984":                        150,  # 1984 film (1984), BBC dramatisations; defining cultural touchstone
+    "nineteen eighty-four":        150,
+    "crime and punishment":        100,  # Raskolnikov is cinema shorthand; multiple major films
+    "les misérables":              120,  # 2012 musical film ($440M global), 2018 BBC miniseries
+    "les miserables":              120,
+    "lady chatterley's lover":     100,  # 2022 Netflix film (Emma Corrin) — very recent
+    "romeo and juliet":            130,  # Baz Luhrmann 1996 ($147M), 2013 film, countless versions
+    "a christmas carol":            90,  # Muppets, Scrooge (1951), countless remakes every decade
+    "anna karenina":                90,  # 2012 Keira Knightley film; Tolstoy's most adapted novel
+    "war and peace":                80,  # 2016 BBC miniseries; perennial TV event
+    "wuthering heights":            80,  # 2011 Andrea Arnold; multiple major versions
+    "the great gatsby":             90,  # 2013 Baz Luhrmann ($352M); definitive American adaptation
+    "dracula":                      70,  # Lugosi, Langella, Coppola, BBC 2020 series
+    "frankenstein":                 70,  # Universal, Branagh, Shelley canon
+    "the picture of dorian gray":   70,  # 2009 film; theatrical adaptations ongoing
+    "the count of monte cristo":    90,  # 2024 French film ($65M+); Alexandre de la Pattellière
+    "the odyssey":                  80,  # 2025 Christopher Nolan film announced; Coen Bros interest
+    "the jungle book":              80,  # 2016 Favreau ($966M), multiple Disney versions
+    "heart of darkness":            70,  # Apocalypse Now (1979) — indirect but massive
+    "madame bovary":                70,  # 2014 film; multiple French versions
+    "the sun also rises":           60,  # 1957 Tyrone Power film; Hemingway cinema legacy
+}
+
 TITLE_AUTHOR_MAP = {
     "wuthering heights": "Emily Brontë",
     "jane eyre": "Charlotte Brontë",
@@ -145,6 +172,15 @@ def score_and_rank(candidates):
             entry["score"] *= 1.5
         elif unique_sources >= 2:
             entry["score"] *= 1.2
+
+    # Permanent adaptation legacy bonus — established film/TV history
+    for entry in result:
+        title_key = entry.get("title", "").lower().split(" (")[0].strip()
+        bonus = KNOWN_ADAPTATIONS.get(title_key, 0)
+        if bonus:
+            entry["score"] += bonus
+            if "adaptation legacy" not in entry["signals"]:
+                entry["signals"].append("adaptation legacy")
 
     result.sort(key=lambda x: x["score"], reverse=True)
     return result
