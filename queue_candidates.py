@@ -86,6 +86,29 @@ KNOWN_DEATH_YEARS: dict[str, int] = {
     "Emily Brontë": 1848,
     "Charles Dickens": 1870,
     "Herman Melville": 1891,
+    # Still in copyright
+    "Agatha Christie": 1976,
+    "Arthur Miller": 2005,
+    "William Golding": 1993,
+    "John Steinbeck": 1968,
+    "Ray Bradbury": 2012,
+    "Harper Lee": 2016,
+    "J.D. Salinger": 2010,
+    "Jean-Paul Sartre": 1980,
+    "Albert Camus": 1960,
+    "Simone de Beauvoir": 1986,
+    "Samuel Beckett": 1989,
+    "Milan Kundera": 2023,
+    "Daniel Quinn": 2018,
+    "Jostein Gaarder": 2099,   # still alive
+    "Paulo Coelho": 2099,      # still alive
+    "Matt Haig": 2099,         # still alive
+    "Willy Russell": 2099,     # still alive
+    "Mitch Albom": 2099,       # still alive
+    "Ian McEwan": 2099,        # still alive
+    "Philip Pullman": 2099,    # still alive
+    "Antoine de Saint-Exupéry": 1944,
+    "Antoine de Saint-Exup\u00e9ry": 1944,
 }
 
 TRACKING_COLS = [
