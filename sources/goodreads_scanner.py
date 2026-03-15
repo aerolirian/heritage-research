@@ -64,11 +64,16 @@ def scan(config):
         for url in SHELVES:
             try:
                 page.goto(url, timeout=20000)
-                page.wait_for_selector(".bookTitle", timeout=8000)
-                books = page.query_selector_all(".bookTitle")
-                authors = page.query_selector_all(".authorName")
-                for i, (book_el, author_el) in enumerate(zip(books[:30], authors)):
-                    title = book_el.inner_text().strip()
+                page.wait_for_selector(".elementList", timeout=8000)
+                # Query per-book containers — avoids author misalignment when
+                # a book has multiple authors (global zip gets offset otherwise)
+                entries = page.query_selector_all(".elementList")
+                for i, entry in enumerate(entries[:30]):
+                    title_el  = entry.query_selector(".bookTitle")
+                    author_el = entry.query_selector(".authorName")
+                    if not title_el:
+                        continue
+                    title  = title_el.inner_text().strip()
                     author = author_el.inner_text().strip() if author_el else ""
                     candidates.append({
                         "source": "goodreads",
