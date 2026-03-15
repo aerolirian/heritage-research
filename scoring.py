@@ -8,6 +8,7 @@ from collections import defaultdict
 SOURCE_WEIGHTS = {
     "tmdb": 80,          # upcoming film/TV adaptation — strongest urgency
     "anniversary": 70,   # centennial — defined media window, now or never
+    "pd_entry": 75,      # just entered PD this/next year — new opportunity, competitors notice too
     "wikipedia": 65,     # traffic spike = something just happened culturally
     "reddit": 50,        # social discussion velocity
     "trends": 45,        # search momentum spike

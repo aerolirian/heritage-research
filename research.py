@@ -26,7 +26,7 @@ def load_config():
 def cmd_sweep(args, config):
     sources = args.source.split(",") if args.source else [
         "reddit", "hn", "gutenberg", "tmdb", "trends", "brave",
-        "goodreads", "wikipedia", "anniversary", "youtube",
+        "goodreads", "wikipedia", "anniversary", "pd_entry", "youtube",
         "amazon", "tiktok", "instagram", "twitter",
         "letterboxd", "opensyllabus",
         "librarything", "storygraph", "substack", "lithub",
@@ -80,6 +80,8 @@ def run_source(source, config):
         from sources.wikipedia_scanner import scan
     elif source == "anniversary":
         from sources.anniversary_scanner import scan
+    elif source == "pd_entry":
+        from sources.pd_entry_scanner import scan
     elif source == "youtube":
         from sources.youtube_scanner import scan
     elif source == "amazon":
